@@ -102,14 +102,20 @@
           <p id="masukMessage"></p>
         </div>
 
-        <!-- Barang Keluar -->
+               <!-- Barang Keluar -->
         <div id="page-keluar" class="content hidden">
           <h3>Barang Keluar</h3>
           <form id="formKeluar" onsubmit="submitKeluar(event)">
             <label>Tanggal</label><input type="date" id="keluarTanggal" required>
             <label>Barang</label><select id="keluarBarang" required></select>
             <label>Jumlah</label><input type="number" id="keluarQty" required min="1">
-            <label>Unit</label><select id="keluarUnit"></select>
+            
+            <label>Project Name</label><input type="text" id="keluarProject" placeholder="Contoh: NPM" required>
+            <label>Lokasi</label><input type="text" id="keluarLokasi" placeholder="Contoh: Matarape" required>
+            
+            <!-- Cukup Pilih Unit, ID dan SN otomatis -->
+            <label>Unit</label><select id="keluarUnit" required></select>
+            
             <label>Keterangan</label><input type="text" id="keluarKeterangan">
             <button type="submit">SIMPAN</button>
           </form>
