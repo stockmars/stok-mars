@@ -123,25 +123,39 @@ async function submitKeluar(e) {
   e.preventDefault(); 
   const msg = document.getElementById('keluarMessage');
   msg.textContent = 'Menyimpan...';
+  
   const idUnit = document.getElementById('keluarUnit').value;
+  // Mencari data unit (ID dan SN) otomatis dari Master Unit
   const unitData = masterUnit.find(u => u.IDUnit === idUnit);
+  
   const data = {
     tanggal: document.getElementById('keluarTanggal').value,
     itemId: document.getElementById('keluarBarang').value,
     qty: Number(document.getElementById('keluarQty').value),
+    project: document.getElementById('keluarProject').value,
+    lokasi: document.getElementById('keluarLokasi').value,
     idUnit: idUnit,
     jenisUnit: unitData ? unitData.JenisAlat : '-',
-    serialNumber: unitData ? unitData.SerialNumber : '-',
+    serialNumber: unitData ? unitData.SerialNumber : '-', // Otomatis ambil SN dari Master Unit
     keterangan: document.getElementById('keluarKeterangan').value,
     namaPIC: currentUser ? currentUser.nama : 'Admin',
     email: currentUser ? currentUser.email : 'admin@npm.com'
   };
+  
   try {
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'barangKeluar', data }) });
     const result = await res.json();
-    if (result.success) { msg.textContent = '✓ ' + result.message; msg.className = 'success'; document.getElementById('formKeluar').reset(); document.getElementById('keluarTanggal').value = new Date().toISOString().split('T')[0]; loadInitialData(); } 
-    else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
-  } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
+    if (result.success) { 
+      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
+      document.getElementById('formKeluar').reset(); 
+      document.getElementById('keluarTanggal').value = new Date().toISOString().split('T')[0]; 
+      loadInitialData(); 
+    } else { 
+      msg.textContent = '✗ ' + result.message; msg.className = 'error'; 
+    }
+  } catch (err) { 
+    msg.textContent = 'Error: ' + err.message; msg.className = 'error'; 
+  }
 }
 
 async function loadKartu() {
