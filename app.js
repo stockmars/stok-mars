@@ -4,20 +4,14 @@ let currentUser = null;
 let masterBarang = [];
 let masterUnit = [];
 
-// ============================================
-// LOGIN & LOGOUT
-// ============================================
 async function doLogin() {
   const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
   const msg = document.getElementById('loginMessage');
   if (!email) { msg.textContent = 'Email wajib diisi'; return; }
   msg.textContent = 'Memproses...';
-  
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'login', data: { email, password } }) });
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'login', data: { email } }) });
     const result = await res.json();
-    
     if (result.success) {
       currentUser = result.user;
       localStorage.setItem('user', JSON.stringify(currentUser)); 
@@ -25,52 +19,32 @@ async function doLogin() {
       document.getElementById('mainApp').classList.remove('hidden');
       document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
       await loadInitialData();
-    } else { 
-      msg.textContent = result.message; 
-    }
-  } catch (err) { 
-    msg.textContent = 'Error: ' + err.message; 
-  }
+    } else { msg.textContent = result.message; }
+  } catch (err) { msg.textContent = 'Error: ' + err.message; }
 }
 
-function doLogout() { 
-  localStorage.removeItem('user'); 
-  location.reload(); 
-}
+function doLogout() { localStorage.removeItem('user'); location.reload(); }
 
-// ============================================
-// LOAD DATA AWAL (PARALEL BIAR CEPAT)
-// ============================================
 async function loadInitialData() {
   try {
-    // Ambil data barang dan unit secara bersamaan
     const [resBarang, resUnit] = await Promise.all([
       fetch(API_URL + '?action=getMasterBarang'),
       fetch(API_URL + '?action=getMasterUnit')
     ]);
-    
     const jsonBarang = await resBarang.json();
     const jsonUnit = await resUnit.json();
     
     if (jsonBarang.success) masterBarang = jsonBarang.data;
     if (jsonUnit.success) masterUnit = jsonUnit.data;
 
-    // Panggil semua fungsi tampilan
     fillDropdowns();
     loadListBarang();
     loadListUnit();
     loadDashboard();
-    
-  } catch (error) {
-    console.error("Gagal load data", error);
-  }
+  } catch (error) { console.error("Gagal load data", error); }
 }
 
-// ============================================
-// FUNGSI TAMPILAN (DROPDOWN, TABEL, DASHBOARD)
-// ============================================
 function fillDropdowns() {
-  // Isi Dropdown Barang
   let optBarang = '<option value="">-- Pilih Barang --</option>';
   masterBarang.forEach(b => { optBarang += `<option value="${b.ItemID}">${b.ItemID} - ${b.NamaBarang}</option>`; });
   
@@ -78,14 +52,12 @@ function fillDropdowns() {
   if(document.getElementById('keluarBarang')) document.getElementById('keluarBarang').innerHTML = optBarang;
   if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optBarang;
 
-  // Isi Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
   masterUnit.forEach(u => { optUnit += `<option value="${u.IDUnit}">${u.IDUnit} - ${u.SerialNumber}</option>`; });
   
   if(document.getElementById('keluarUnit')) document.getElementById('keluarUnit').innerHTML = optUnit;
   if(document.getElementById('filterUnit')) document.getElementById('filterUnit').innerHTML = '<option value="">Semua Unit</option>' + optUnit;
 
-  // Set Tanggal Hari Ini
   const today = new Date().toISOString().split('T')[0];
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
@@ -94,19 +66,21 @@ function fillDropdowns() {
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
-  masterBarang.forEach(b => { 
-    html += `<tr><td>${b.ItemID}</td><td>${b.NamaBarang}</td><td>${b.Kategori}</td><td>${b.Satuan}</td><td>${b.StokMinimum}</td></tr>`; 
-  });
+  masterBarang.forEach(b => { html += `<tr><td>${b.ItemID}</td><td>${b.NamaBarang}</td><td>${b.Kategori}</td><td>${b.Satuan}</td><td>${b.StokMinimum}</td></tr>`; });
   document.getElementById('listBarang').innerHTML = `<table><thead><tr><th>ID</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Min</th></tr></thead><tbody>${html}</tbody></table>`;
 }
 
 function loadListUnit() {
   if(!document.getElementById('listUnit')) return;
   let html = '';
-  masterUnit.forEach(u => { 
-    html += `<tr><td>${u.IDUnit}</td><td>${u.JenisAlat}</td><td>${u.SerialNumber}</td><td>${u.Project}</td><td>${u.StatusUnit}</td></tr>`; 
-  });
+  masterUnit.forEach(u => { html += `<tr><td>${u.IDUnit}</td><td>${u.JenisAlat}</td><td>${u.SerialNumber}</td><td>${u.Project}</td><td>${u.StatusUnit}</td></tr>`; });
   document.getElementById('listUnit').innerHTML = `<table><thead><tr><th>ID Unit</th><th>Jenis</th><th>Serial</th><th>Project</th><th>Status</th></tr></thead><tbody>${html}</tbody></table>`;
+}
+
+function filterBarang() {
+  const q = document.getElementById('searchBarang').value.toLowerCase();
+  const rows = document.querySelectorAll('#listBarang tbody tr');
+  rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
 }
 
 async function loadDashboard() {
@@ -118,30 +92,16 @@ async function loadDashboard() {
       document.getElementById('dashTotalUnit').textContent = result.data.totalUnit;
       document.getElementById('dashTotalMasuk').textContent = result.data.totalMasuk;
       document.getElementById('dashTotalKeluar').textContent = result.data.totalKeluar;
-      
       const recent = result.data.transaksiTerbaru.map(t => `<div class="card" style="margin-bottom:8px"><small>${formatDate(t.tanggal)}</small><br><strong>${t.itemId}</strong> - ${t.jenis} ${t.qty} (${t.pic})</div>`).join('');
       if(document.getElementById('dashRecent')) document.getElementById('dashRecent').innerHTML = recent;
     }
   } catch(e) {}
 }
 
-// ============================================
-// FUNGSI PENCARIAN BARANG
-// ============================================
-function filterBarang() {
-  const q = document.getElementById('searchBarang').value.toLowerCase();
-  const rows = document.querySelectorAll('#listBarang tbody tr');
-  rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
-}
-
-// ============================================
-// FORM TRANSAKSI (MASUK & KELUAR)
-// ============================================
 async function submitMasuk(e) {
   e.preventDefault(); 
   const msg = document.getElementById('masukMessage');
   msg.textContent = 'Menyimpan...';
-  
   const data = {
     tanggal: document.getElementById('masukTanggal').value,
     itemId: document.getElementById('masukBarang').value,
@@ -151,21 +111,12 @@ async function submitMasuk(e) {
     namaPIC: currentUser ? currentUser.nama : 'Admin',
     email: currentUser ? currentUser.email : 'admin@npm.com'
   };
-  
   try {
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'barangMasuk', data }) });
     const result = await res.json();
-    if (result.success) { 
-      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
-      document.getElementById('formMasuk').reset(); 
-      document.getElementById('masukTanggal').value = new Date().toISOString().split('T')[0]; 
-      loadInitialData(); 
-    } else { 
-      msg.textContent = '✗ ' + result.message; msg.className = 'error'; 
-    }
-  } catch (err) { 
-    msg.textContent = 'Error: ' + err.message; msg.className = 'error'; 
-  }
+    if (result.success) { msg.textContent = '✓ ' + result.message; msg.className = 'success'; document.getElementById('formMasuk').reset(); document.getElementById('masukTanggal').value = new Date().toISOString().split('T')[0]; loadInitialData(); } 
+    else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
+  } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
 
 async function submitKeluar(e) {
@@ -174,7 +125,6 @@ async function submitKeluar(e) {
   msg.textContent = 'Menyimpan...';
   const idUnit = document.getElementById('keluarUnit').value;
   const unitData = masterUnit.find(u => u.IDUnit === idUnit);
-  
   const data = {
     tanggal: document.getElementById('keluarTanggal').value,
     itemId: document.getElementById('keluarBarang').value,
@@ -186,61 +136,36 @@ async function submitKeluar(e) {
     namaPIC: currentUser ? currentUser.nama : 'Admin',
     email: currentUser ? currentUser.email : 'admin@npm.com'
   };
-  
   try {
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'barangKeluar', data }) });
     const result = await res.json();
-    if (result.success) { 
-      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
-      document.getElementById('formKeluar').reset(); 
-      document.getElementById('keluarTanggal').value = new Date().toISOString().split('T')[0]; 
-      loadInitialData(); 
-    } else { 
-      msg.textContent = '✗ ' + result.message; msg.className = 'error'; 
-    }
-  } catch (err) { 
-    msg.textContent = 'Error: ' + err.message; msg.className = 'error'; 
-  }
+    if (result.success) { msg.textContent = '✓ ' + result.message; msg.className = 'success'; document.getElementById('formKeluar').reset(); document.getElementById('keluarTanggal').value = new Date().toISOString().split('T')[0]; loadInitialData(); } 
+    else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
+  } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
 
-// ============================================
-// FUNGSI KARTU STOK (TAMPILAN EXCEL)
-// ============================================
 async function loadKartu() {
   const itemId = document.getElementById('kartuBarangSelect').value;
   const container = document.getElementById('kartuContent');
-  
-  if (!itemId) { 
-    container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; 
-    return; 
-  }
-
+  if (!itemId) { container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; return; }
   container.innerHTML = '<p style="text-align: center;">Memuat data laporan...</p>';
 
   try {
     const barang = masterBarang.find(b => b.ItemID === itemId);
-    if (!barang) throw new Error('Barang tidak ditemukan');
-
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getTransaksi', data: { itemId } }) });
     const result = await res.json();
-    
-    if (!result.success) throw new Error(result.message);
     const transaksi = result.data;
-    
     let saldo = Number(barang.StokAwal) || 0;
     let rowsHtml = '';
     
-    if (transaksi.length === 0) {
-      rowsHtml = `<tr><td colspan="11">Belum ada transaksi untuk barang ini.</td></tr>`;
-    } else {
+    if (transaksi.length === 0) { rowsHtml = `<tr><td colspan="11">Belum ada transaksi untuk barang ini.</td></tr>`; } 
+    else {
       transaksi.forEach((t, index) => {
         const isMasuk = t.JenisTransaksi === 'MASUK';
         const qtyMasuk = isMasuk ? Number(t.QtyMasuk) : 0;
         const qtyKeluar = !isMasuk ? Number(t.QtyKeluar) : 0;
         saldo = saldo + qtyMasuk - qtyKeluar;
-
-        const tgl = new Date(t.TanggalTransaksi);
-        const tglStr = tgl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '-');
+        const tglStr = new Date(t.TanggalTransaksi).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '-');
 
         rowsHtml += `
           <tr>
@@ -303,18 +228,12 @@ async function loadKartu() {
         <div class="ttd-box"><p>Yang Menyetujui,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">Dodi Saputra Sahupala</p></div>
       </div>
     `;
-  } catch (err) {
-    container.innerHTML = `<p style="color: red; text-align: center;">Gagal: ${err.message}</p>`;
-  }
+  } catch (err) { container.innerHTML = `<p style="color: red; text-align: center;">Gagal: ${err.message}</p>`; }
 }
 
-// ============================================
-// FUNGSI LAPORAN UNIT
-// ============================================
 async function loadLaporanUnit() {
   const container = document.getElementById('listLaporanUnit');
   container.innerHTML = '<p>Memuat data...</p>';
-  
   const tglAwal = document.getElementById('filterTglAwal').value;
   const tglAkhir = document.getElementById('filterTglAkhir').value;
   const unitDipilih = document.getElementById('filterUnit').value;
@@ -322,12 +241,10 @@ async function loadLaporanUnit() {
   try {
     const res = await fetch(API_URL + '?action=getTransaksi');
     const result = await res.json();
-    
     if (result.success) {
       const filteredData = result.data.filter(t => {
         if (t.JenisTransaksi !== 'KELUAR' || t.StatusTransaksi !== 'AKTIF' || !t.IDUnit || t.IDUnit === '-') return false;
         if (unitDipilih && t.IDUnit !== unitDipilih) return false;
-        
         const tanggalTrx = new Date(t.TanggalTransaksi).setHours(0,0,0,0);
         if (tglAwal) { const awal = new Date(tglAwal).setHours(0,0,0,0); if (tanggalTrx < awal) return false; }
         if (tglAkhir) { const akhir = new Date(tglAkhir).setHours(23,59,59,999); if (tanggalTrx > akhir) return false; }
@@ -364,9 +281,6 @@ async function loadLaporanUnit() {
   } catch (err) { container.innerHTML = '<p class="error">Error memuat laporan.</p>'; }
 }
 
-// ============================================
-// FUNGSI TAMBAH BARANG BARU
-// ============================================
 function bukaFormBarang() { document.getElementById('formTambahBarang').classList.remove('hidden'); document.getElementById('msgTambahBarang').textContent = ''; }
 function tutupFormBarang() { document.getElementById('formTambahBarang').classList.add('hidden'); document.getElementById('baruNama').value = ''; document.getElementById('baruKode').value = ''; document.getElementById('baruMerek').value = ''; document.getElementById('baruMin').value = '0'; }
 
@@ -374,28 +288,18 @@ async function submitTambahBarang(e) {
   e.preventDefault();
   const msg = document.getElementById('msgTambahBarang');
   msg.textContent = 'Menyimpan...';
-  
   const data = { namaBarang: document.getElementById('baruNama').value, kodeItem: document.getElementById('baruKode').value, kategori: document.getElementById('baruKategori').value, satuan: document.getElementById('baruSatuan').value, merek: document.getElementById('baruMerek').value, stokMinimum: document.getElementById('baruMin').value };
-  
   try {
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'tambahBarang', data }) });
     const result = await res.json();
-    if (result.success) { 
-      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
-      await loadInitialData(); 
-      setTimeout(() => { tutupFormBarang(); msg.textContent = ''; }, 2000); 
-    }
+    if (result.success) { msg.textContent = '✓ ' + result.message; msg.className = 'success'; await loadInitialData(); setTimeout(() => { tutupFormBarang(); msg.textContent = ''; }, 2000); }
     else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
 
-// ============================================
-// NAVIGASI & HELPER
-// ============================================
 function showPage(page) {
   document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
-  
   if (page === 'laporanUnit') {
     if(!document.getElementById('filterTglAwal').value) {
       const now = new Date();
@@ -408,9 +312,6 @@ function showPage(page) {
 
 function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
-// ============================================
-// AUTO LOGIN (CEK SESI)
-// ============================================
 window.addEventListener('DOMContentLoaded', async () => {
   const saved = localStorage.getItem('user');
   if (saved) {
