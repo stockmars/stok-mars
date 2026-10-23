@@ -5,7 +5,7 @@ let masterBarang = [];
 let masterUnit = [];
 
 // ============================================
-// LOGIN (DENGAN PENGAMAN LOCALSTORAGE)
+// LOGIN & LOGOUT
 // ============================================
 async function doLogin() {
   const email = document.getElementById('loginEmail').value;
@@ -20,11 +20,11 @@ async function doLogin() {
     
     if (result.success) {
       currentUser = result.user;
-      localStorage.setItem('user', JSON.stringify(currentUser)); // Simpan sesi
+      localStorage.setItem('user', JSON.stringify(currentUser)); 
       document.getElementById('loginPage').classList.add('hidden');
       document.getElementById('mainApp').classList.remove('hidden');
       document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
-      await loadDataAwal();
+      await loadInitialData();
     } else { 
       msg.textContent = result.message; 
     }
@@ -34,33 +34,43 @@ async function doLogin() {
 }
 
 function doLogout() { 
-  localStorage.removeItem('user'); // Hapus sesi
+  localStorage.removeItem('user'); 
   location.reload(); 
 }
 
 // ============================================
-// LOAD DATA AWAL
+// LOAD DATA AWAL (PARALEL BIAR CEPAT)
 // ============================================
-async function loadDataAwal() {
+async function loadInitialData() {
   try {
-    const resBarang = await fetch(API_URL + '?action=getMasterBarang');
+    // Ambil data barang dan unit secara bersamaan
+    const [resBarang, resUnit] = await Promise.all([
+      fetch(API_URL + '?action=getMasterBarang'),
+      fetch(API_URL + '?action=getMasterUnit')
+    ]);
+    
     const jsonBarang = await resBarang.json();
-    if (jsonBarang.success) masterBarang = jsonBarang.data;
-
-    const resUnit = await fetch(API_URL + '?action=getMasterUnit');
     const jsonUnit = await resUnit.json();
+    
+    if (jsonBarang.success) masterBarang = jsonBarang.data;
     if (jsonUnit.success) masterUnit = jsonUnit.data;
 
-    isiDropdown();
-    isiTabelBarang();
-    isiTabelUnit();
+    // Panggil semua fungsi tampilan
+    fillDropdowns();
+    loadListBarang();
+    loadListUnit();
     loadDashboard();
+    
   } catch (error) {
-    console.log("Gagal load data", error);
+    console.error("Gagal load data", error);
   }
 }
 
-function isiDropdown() {
+// ============================================
+// FUNGSI TAMPILAN (DROPDOWN, TABEL, DASHBOARD)
+// ============================================
+function fillDropdowns() {
+  // Isi Dropdown Barang
   let optBarang = '<option value="">-- Pilih Barang --</option>';
   masterBarang.forEach(b => { optBarang += `<option value="${b.ItemID}">${b.ItemID} - ${b.NamaBarang}</option>`; });
   
@@ -68,28 +78,34 @@ function isiDropdown() {
   if(document.getElementById('keluarBarang')) document.getElementById('keluarBarang').innerHTML = optBarang;
   if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optBarang;
 
+  // Isi Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
   masterUnit.forEach(u => { optUnit += `<option value="${u.IDUnit}">${u.IDUnit} - ${u.SerialNumber}</option>`; });
   
   if(document.getElementById('keluarUnit')) document.getElementById('keluarUnit').innerHTML = optUnit;
   if(document.getElementById('filterUnit')) document.getElementById('filterUnit').innerHTML = '<option value="">Semua Unit</option>' + optUnit;
 
+  // Set Tanggal Hari Ini
   const today = new Date().toISOString().split('T')[0];
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
 }
 
-function isiTabelBarang() {
+function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
-  masterBarang.forEach(b => { html += `<tr><td>${b.ItemID}</td><td>${b.NamaBarang}</td><td>${b.Kategori}</td><td>${b.Satuan}</td><td>${b.StokMinimum}</td></tr>`; });
+  masterBarang.forEach(b => { 
+    html += `<tr><td>${b.ItemID}</td><td>${b.NamaBarang}</td><td>${b.Kategori}</td><td>${b.Satuan}</td><td>${b.StokMinimum}</td></tr>`; 
+  });
   document.getElementById('listBarang').innerHTML = `<table><thead><tr><th>ID</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Min</th></tr></thead><tbody>${html}</tbody></table>`;
 }
 
-function isiTabelUnit() {
+function loadListUnit() {
   if(!document.getElementById('listUnit')) return;
   let html = '';
-  masterUnit.forEach(u => { html += `<tr><td>${u.IDUnit}</td><td>${u.JenisAlat}</td><td>${u.SerialNumber}</td><td>${u.Project}</td><td>${u.StatusUnit}</td></tr>`; });
+  masterUnit.forEach(u => { 
+    html += `<tr><td>${u.IDUnit}</td><td>${u.JenisAlat}</td><td>${u.SerialNumber}</td><td>${u.Project}</td><td>${u.StatusUnit}</td></tr>`; 
+  });
   document.getElementById('listUnit').innerHTML = `<table><thead><tr><th>ID Unit</th><th>Jenis</th><th>Serial</th><th>Project</th><th>Status</th></tr></thead><tbody>${html}</tbody></table>`;
 }
 
@@ -102,15 +118,27 @@ async function loadDashboard() {
       document.getElementById('dashTotalUnit').textContent = result.data.totalUnit;
       document.getElementById('dashTotalMasuk').textContent = result.data.totalMasuk;
       document.getElementById('dashTotalKeluar').textContent = result.data.totalKeluar;
+      
+      const recent = result.data.transaksiTerbaru.map(t => `<div class="card" style="margin-bottom:8px"><small>${formatDate(t.tanggal)}</small><br><strong>${t.itemId}</strong> - ${t.jenis} ${t.qty} (${t.pic})</div>`).join('');
+      if(document.getElementById('dashRecent')) document.getElementById('dashRecent').innerHTML = recent;
     }
   } catch(e) {}
 }
 
 // ============================================
-// SUBMIT FORM (ANTI RELOAD)
+// FUNGSI PENCARIAN BARANG
+// ============================================
+function filterBarang() {
+  const q = document.getElementById('searchBarang').value.toLowerCase();
+  const rows = document.querySelectorAll('#listBarang tbody tr');
+  rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+}
+
+// ============================================
+// FORM TRANSAKSI (MASUK & KELUAR)
 // ============================================
 async function submitMasuk(e) {
-  e.preventDefault(); // Mencegah halaman reload
+  e.preventDefault(); 
   const msg = document.getElementById('masukMessage');
   msg.textContent = 'Menyimpan...';
   
@@ -131,7 +159,7 @@ async function submitMasuk(e) {
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
       document.getElementById('formMasuk').reset(); 
       document.getElementById('masukTanggal').value = new Date().toISOString().split('T')[0]; 
-      loadDataAwal(); 
+      loadInitialData(); 
     } else { 
       msg.textContent = '✗ ' + result.message; msg.className = 'error'; 
     }
@@ -141,7 +169,7 @@ async function submitMasuk(e) {
 }
 
 async function submitKeluar(e) {
-  e.preventDefault(); // Mencegah halaman reload
+  e.preventDefault(); 
   const msg = document.getElementById('keluarMessage');
   msg.textContent = 'Menyimpan...';
   const idUnit = document.getElementById('keluarUnit').value;
@@ -166,7 +194,7 @@ async function submitKeluar(e) {
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
       document.getElementById('formKeluar').reset(); 
       document.getElementById('keluarTanggal').value = new Date().toISOString().split('T')[0]; 
-      loadDataAwal(); 
+      loadInitialData(); 
     } else { 
       msg.textContent = '✗ ' + result.message; msg.className = 'error'; 
     }
@@ -176,14 +204,213 @@ async function submitKeluar(e) {
 }
 
 // ============================================
-// NAVIGASI
+// FUNGSI KARTU STOK (TAMPILAN EXCEL)
+// ============================================
+async function loadKartu() {
+  const itemId = document.getElementById('kartuBarangSelect').value;
+  const container = document.getElementById('kartuContent');
+  
+  if (!itemId) { 
+    container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; 
+    return; 
+  }
+
+  container.innerHTML = '<p style="text-align: center;">Memuat data laporan...</p>';
+
+  try {
+    const barang = masterBarang.find(b => b.ItemID === itemId);
+    if (!barang) throw new Error('Barang tidak ditemukan');
+
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getTransaksi', data: { itemId } }) });
+    const result = await res.json();
+    
+    if (!result.success) throw new Error(result.message);
+    const transaksi = result.data;
+    
+    let saldo = Number(barang.StokAwal) || 0;
+    let rowsHtml = '';
+    
+    if (transaksi.length === 0) {
+      rowsHtml = `<tr><td colspan="11">Belum ada transaksi untuk barang ini.</td></tr>`;
+    } else {
+      transaksi.forEach((t, index) => {
+        const isMasuk = t.JenisTransaksi === 'MASUK';
+        const qtyMasuk = isMasuk ? Number(t.QtyMasuk) : 0;
+        const qtyKeluar = !isMasuk ? Number(t.QtyKeluar) : 0;
+        saldo = saldo + qtyMasuk - qtyKeluar;
+
+        const tgl = new Date(t.TanggalTransaksi);
+        const tglStr = tgl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '-');
+
+        rowsHtml += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${isMasuk ? tglStr : ''}</td>
+            <td>${isMasuk ? (t.Supplier || '-') : ''}</td>
+            <td>${isMasuk ? qtyMasuk : ''}</td>
+            <td>${!isMasuk ? tglStr : ''}</td>
+            <td>${!isMasuk ? qtyKeluar : ''}</td>
+            <td style="font-weight: bold; background-color: #f9f9f9;">${saldo}</td>
+            <td>${!isMasuk ? (t.Project || '-') : ''}</td>
+            <td>${!isMasuk ? (t.Lokasi || '-') : ''}</td>
+            <td>${!isMasuk ? (t.IDUnit || '-') : ''}</td>
+            <td>${!isMasuk ? (t.SerialNumber || '-') : ''}</td>
+          </tr>
+        `;
+      });
+    }
+
+    const todayStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const currentUserName = currentUser ? currentUser.nama : 'Admin';
+
+    container.innerHTML = `
+      <div class="laporan-header">
+        <table style="width: 50%;">
+          <tr><td style="width: 120px; font-weight: bold;">Nama PIC</td><td>: ${currentUserName}</td></tr>
+          <tr><td style="font-weight: bold;">Nama Barang</td><td>: ${barang.NamaBarang}</td></tr>
+          <tr><td style="font-weight: bold;">Kode Item</td><td>: ${barang.KodeItem}</td></tr>
+          <tr><td style="font-weight: bold;">Kategori</td><td>: ${barang.Kategori}</td></tr>
+          <tr><td style="font-weight: bold;">Lokasi</td><td>: NPM Matarape</td></tr>
+        </table>
+      </div>
+      <div class="laporan-title">STOCK OPNAME</div>
+      <table class="laporan-table">
+        <thead>
+          <tr>
+            <th rowspan="2" style="width: 40px;">NO</th>
+            <th colspan="3">Barang Masuk</th>
+            <th colspan="2">Barang Keluar</th>
+            <th rowspan="2" style="width: 80px;">Balance Qty</th>
+            <th colspan="4">KETERANGAN</th>
+          </tr>
+          <tr>
+            <th>Tanggal</th>
+            <th>Suplier</th>
+            <th>Qty Barang</th>
+            <th>Tanggal</th>
+            <th>Qty Barang</th>
+            <th>Project Name</th>
+            <th>Lokasi</th>
+            <th>ID</th>
+            <th>SN</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div style="margin-top: 20px; font-size: 14px;">Matarape, ${todayStr}</div>
+      <div class="laporan-ttd">
+        <div class="ttd-box"><p>Yang Membuat,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${currentUserName}</p></div>
+        <div class="ttd-box"><p>Yang Menyetujui,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">Dodi Saputra Sahupala</p></div>
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<p style="color: red; text-align: center;">Gagal: ${err.message}</p>`;
+  }
+}
+
+// ============================================
+// FUNGSI LAPORAN UNIT
+// ============================================
+async function loadLaporanUnit() {
+  const container = document.getElementById('listLaporanUnit');
+  container.innerHTML = '<p>Memuat data...</p>';
+  
+  const tglAwal = document.getElementById('filterTglAwal').value;
+  const tglAkhir = document.getElementById('filterTglAkhir').value;
+  const unitDipilih = document.getElementById('filterUnit').value;
+  
+  try {
+    const res = await fetch(API_URL + '?action=getTransaksi');
+    const result = await res.json();
+    
+    if (result.success) {
+      const filteredData = result.data.filter(t => {
+        if (t.JenisTransaksi !== 'KELUAR' || t.StatusTransaksi !== 'AKTIF' || !t.IDUnit || t.IDUnit === '-') return false;
+        if (unitDipilih && t.IDUnit !== unitDipilih) return false;
+        
+        const tanggalTrx = new Date(t.TanggalTransaksi).setHours(0,0,0,0);
+        if (tglAwal) { const awal = new Date(tglAwal).setHours(0,0,0,0); if (tanggalTrx < awal) return false; }
+        if (tglAkhir) { const akhir = new Date(tglAkhir).setHours(23,59,59,999); if (tanggalTrx > akhir) return false; }
+        return true;
+      });
+
+      if (filteredData.length === 0) { container.innerHTML = '<p>Tidak ada penggunaan part pada periode/unit ini.</p>'; return; }
+
+      const perUnit = {};
+      filteredData.forEach(t => {
+        if (!perUnit[t.IDUnit]) {
+          const unitInfo = masterUnit.find(u => u.IDUnit === t.IDUnit);
+          perUnit[t.IDUnit] = { idUnit: t.IDUnit, jenisAlat: unitInfo ? unitInfo.JenisAlat : '-', totalPart: 0, detail: {} };
+        }
+        const qty = Number(t.QtyKeluar) || 0;
+        perUnit[t.IDUnit].totalPart += qty;
+        if (!perUnit[t.IDUnit].detail[t.ItemID]) {
+          const brgInfo = masterBarang.find(b => b.ItemID === t.ItemID);
+          perUnit[t.IDUnit].detail[t.ItemID] = { nama: brgInfo ? brgInfo.NamaBarang : t.ItemID, qty: 0 };
+        }
+        perUnit[t.IDUnit].detail[t.ItemID].qty += qty;
+      });
+
+      const resultData = Object.values(perUnit).map(u => ({ idUnit: u.idUnit, jenisAlat: u.jenisAlat, totalPart: u.totalPart, detail: Object.values(u.detail) })).sort((a, b) => b.totalPart - a.totalPart);
+      
+      let html = '<div class="cards">';
+      resultData.forEach(unit => {
+        let detailHtml = unit.detail.map(d => `<div style="display:flex; justify-content:space-between; font-size:13px; border-bottom:1px dashed #eee; padding:6px 0;"><span>${d.nama}</span><strong>${d.qty}</strong></div>`).join('');
+        html += `<div class="card" style="text-align:left;"><h4 style="color:#1a73e8; font-size:16px; margin-bottom:4px;">${unit.idUnit} <span style="font-size:12px; color:#666;">(${unit.jenisAlat})</span></h4><p style="font-size:24px; margin-bottom:12px;">${unit.totalPart} <span style="font-size:12px; color:#666; font-weight:normal;">Total Part</span></p><div style="margin-top:12px;"><small style="color:#999; display:block; margin-bottom:4px;">Rincian:</small>${detailHtml}</div></div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+  } catch (err) { container.innerHTML = '<p class="error">Error memuat laporan.</p>'; }
+}
+
+// ============================================
+// FUNGSI TAMBAH BARANG BARU
+// ============================================
+function bukaFormBarang() { document.getElementById('formTambahBarang').classList.remove('hidden'); document.getElementById('msgTambahBarang').textContent = ''; }
+function tutupFormBarang() { document.getElementById('formTambahBarang').classList.add('hidden'); document.getElementById('baruNama').value = ''; document.getElementById('baruKode').value = ''; document.getElementById('baruMerek').value = ''; document.getElementById('baruMin').value = '0'; }
+
+async function submitTambahBarang(e) {
+  e.preventDefault();
+  const msg = document.getElementById('msgTambahBarang');
+  msg.textContent = 'Menyimpan...';
+  
+  const data = { namaBarang: document.getElementById('baruNama').value, kodeItem: document.getElementById('baruKode').value, kategori: document.getElementById('baruKategori').value, satuan: document.getElementById('baruSatuan').value, merek: document.getElementById('baruMerek').value, stokMinimum: document.getElementById('baruMin').value };
+  
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'tambahBarang', data }) });
+    const result = await res.json();
+    if (result.success) { 
+      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
+      await loadInitialData(); 
+      setTimeout(() => { tutupFormBarang(); msg.textContent = ''; }, 2000); 
+    }
+    else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
+  } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
+}
+
+// ============================================
+// NAVIGASI & HELPER
 // ============================================
 function showPage(page) {
   document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
+  
+  if (page === 'laporanUnit') {
+    if(!document.getElementById('filterTglAwal').value) {
+      const now = new Date();
+      document.getElementById('filterTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('filterTglAkhir').value = now.toISOString().split('T')[0];
+    }
+    loadLaporanUnit();
+  }
 }
 
-// Cek sesi saat halaman dimuat
+function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
+
+// ============================================
+// AUTO LOGIN (CEK SESI)
+// ============================================
 window.addEventListener('DOMContentLoaded', async () => {
   const saved = localStorage.getItem('user');
   if (saved) {
@@ -191,6 +418,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
     document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
-    await loadDataAwal();
+    await loadInitialData();
   }
 });
