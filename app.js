@@ -567,3 +567,20 @@ async function submitTambahUnit(e) {
     else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
+// ============================================
+// FUNGSI CETAK LAPORAN
+// ============================================
+function cetakLaporan() {
+  const content = document.getElementById('kartuContent').innerHTML;
+  
+  if (content.includes('Silakan pilih barang terlebih dahulu')) {
+    alert('Silakan pilih barang terlebih dahulu sebelum mencetak!');
+    return;
+  }
+  
+  // Pindahkan isi laporan ke area cetak
+  document.getElementById('areaCetak').innerHTML = content;
+  
+  // Panggil fungsi print bawaan browser
+  window.print();
+}
