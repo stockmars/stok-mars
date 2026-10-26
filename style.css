@@ -46,3 +46,37 @@ tr:hover { background: #f8f9fa; }
 .laporan-ttd { display: flex; justify-content: space-between; margin-top: 50px; font-size: 14px; }
 .ttd-box { width: 30%; text-align: center; }
 .ttd-space { height: 80px; }
+/* ============================================ */
+/* PENGATURAN KHUSUS UNTUK CETAK (PRINT) */
+/* ============================================ */
+@media print {
+  /* Sembunyikan semua elemen web */
+  body * { visibility: hidden; }
+  
+  /* Hanya tampilkan area laporan */
+  #areaCetak, #areaCetak * { visibility: visible; }
+  
+  /* Posisikan laporan di pojok kiri atas kertas */
+  #areaCetak {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+  
+  /* Atur kertas menjadi Landscape (Mendatar) */
+  @page {
+    size: A4 landscape;
+    margin: 15mm;
+  }
+
+  /* Pastikan tabel tercetak dengan garis yang jelas */
+  .laporan-table th, .laporan-table td {
+    border: 1px solid #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
