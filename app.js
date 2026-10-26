@@ -65,6 +65,8 @@ function fillDropdowns() {
   
   if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optBarang;
   if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optBarang;
+  // TAMBAHKAN BARIS INI UNTUK MENGISI DROPDOWN KARTU STOK
+  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optBarang;
 
   // Isi Dropdown Kartu Stok (tetap pakai select)
     // Isi Dropdown Kartu Stok dengan Kode & Merek
