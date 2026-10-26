@@ -572,7 +572,8 @@ async function submitTambahUnit(e) {
 // FUNGSI CETAK LAPORAN
 // ============================================
 function cetakLaporan() {
-  const content = document.getElementById('areaCetak').innerHTML;
+  // Mengambil isi dari kartuContent
+  const content = document.getElementById('kartuContent').innerHTML;
   
   if (content.includes('Silakan pilih barang terlebih dahulu')) {
     alert('Silakan pilih barang terlebih dahulu sebelum mencetak!');
@@ -580,5 +581,6 @@ function cetakLaporan() {
   }
   
   // Panggil fungsi print bawaan browser
+  // (CSS sudah mengatur agar yang tercetak hanya bagian tabel)
   window.print();
 }
