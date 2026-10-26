@@ -54,22 +54,26 @@ async function loadInitialData() {
 // TAMPILAN
 // ============================================
 function fillDropdowns() {
-  let optBarang = '<option value="">-- Pilih Barang --</option>';
-    masterBarang.forEach(b => { 
-    // Menampilkan Kode Item dan Merek (jika ada)
+  // Isi Datalist untuk fitur pencarian barang
+  let optBarang = '';
+  masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
     const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
-    
-    optBarang += `<option value="${b.ItemID}">${b.ItemID} ${kode}- ${b.NamaBarang}${merek}</option>`; 
+    // Value datalist berisi teks lengkap agar bisa dicari
+    optBarang += `<option value="${b.ItemID} - ${b.NamaBarang} ${kode}${merek}"></option>`; 
   });
   
-  if(document.getElementById('masukBarang')) document.getElementById('masukBarang').innerHTML = optBarang;
-  if(document.getElementById('keluarBarang')) document.getElementById('keluarBarang').innerHTML = optBarang;
-  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optBarang;
+  if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optBarang;
+  if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optBarang;
 
+  // Isi Dropdown Kartu Stok (tetap pakai select)
+  let optKartu = '<option value="">-- Pilih Barang --</option>';
+  masterBarang.forEach(b => { optKartu += `<option value="${b.ItemID}">${b.ItemID} - ${b.NamaBarang}</option>`; });
+  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optKartu;
+
+  // Isi Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
   masterUnit.forEach(u => { optUnit += `<option value="${u.IDUnit}">${u.IDUnit} - ${u.SerialNumber}</option>`; });
-  
   if(document.getElementById('keluarUnit')) document.getElementById('keluarUnit').innerHTML = optUnit;
   if(document.getElementById('filterUnit')) document.getElementById('filterUnit').innerHTML = '<option value="">Semua Unit</option>' + optUnit;
 
@@ -145,19 +149,32 @@ async function submitMasuk(e) {
   e.preventDefault(); 
   const msg = document.getElementById('masukMessage');
   msg.textContent = 'Menyimpan...';
+  
+  // Mencari ID Barang berdasarkan teks yang diketik di input
+  const inputText = document.getElementById('masukBarangInput').value;
+  const barang = masterBarang.find(b => inputText.includes(b.ItemID));
+  
+  if (!barang) { msg.textContent = '✗ Barang tidak ditemukan! Pilih dari daftar.'; msg.className = 'error'; return; }
+
   const data = {
     tanggal: document.getElementById('masukTanggal').value,
-    itemId: document.getElementById('masukBarang').value,
+    itemId: barang.ItemID, // ID yang dikirim ke database
     qty: Number(document.getElementById('masukQty').value),
     supplier: document.getElementById('masukSupplier').value,
     keterangan: document.getElementById('masukKeterangan').value,
     namaPIC: currentUser ? currentUser.nama : 'Admin',
     email: currentUser ? currentUser.email : 'admin@npm.com'
   };
+  
   try {
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'barangMasuk', data }) });
     const result = await res.json();
-    if (result.success) { msg.textContent = '✓ ' + result.message; msg.className = 'success'; document.getElementById('formMasuk').reset(); document.getElementById('masukTanggal').value = new Date().toISOString().split('T')[0]; loadInitialData(); } 
+    if (result.success) { 
+      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
+      document.getElementById('formMasuk').reset(); 
+      document.getElementById('masukTanggal').value = new Date().toISOString().split('T')[0]; 
+      loadInitialData(); 
+    } 
     else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
@@ -166,12 +183,19 @@ async function submitKeluar(e) {
   e.preventDefault(); 
   const msg = document.getElementById('keluarMessage');
   msg.textContent = 'Menyimpan...';
+  
+  // Mencari ID Barang berdasarkan teks yang diketik
+  const inputText = document.getElementById('keluarBarangInput').value;
+  const barang = masterBarang.find(b => inputText.includes(b.ItemID));
+  
+  if (!barang) { msg.textContent = '✗ Barang tidak ditemukan! Pilih dari daftar.'; msg.className = 'error'; return; }
+
   const idUnit = document.getElementById('keluarUnit').value;
   const unitData = masterUnit.find(u => u.IDUnit === idUnit);
   
   const data = {
     tanggal: document.getElementById('keluarTanggal').value,
-    itemId: document.getElementById('keluarBarang').value,
+    itemId: barang.ItemID, // ID yang dikirim ke database
     qty: Number(document.getElementById('keluarQty').value),
     project: document.getElementById('keluarProject').value,
     lokasi: document.getElementById('keluarLokasi').value,
