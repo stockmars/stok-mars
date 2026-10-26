@@ -47,17 +47,18 @@ tr:hover { background: #f8f9fa; }
 .ttd-box { width: 30%; text-align: center; }
 .ttd-space { height: 80px; }
 /* ============================================ */
+/* ============================================ */
 /* PENGATURAN KHUSUS UNTUK CETAK (PRINT) */
 /* ============================================ */
 @media print {
   /* Sembunyikan semua elemen web */
   body * { visibility: hidden; }
   
-  /* Hanya tampilkan area laporan */
-  #areaCetak, #areaCetak * { visibility: visible; }
+  /* Hanya tampilkan area laporan (kartuContent) */
+  #kartuContent, #kartuContent * { visibility: visible; }
   
   /* Posisikan laporan di pojok kiri atas kertas */
-  #areaCetak {
+  #kartuContent {
     position: absolute;
     left: 0;
     top: 0;
