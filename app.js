@@ -55,7 +55,13 @@ async function loadInitialData() {
 // ============================================
 function fillDropdowns() {
   let optBarang = '<option value="">-- Pilih Barang --</option>';
-  masterBarang.forEach(b => { optBarang += `<option value="${b.ItemID}">${b.ItemID} - ${b.NamaBarang}</option>`; });
+    masterBarang.forEach(b => { 
+    // Menampilkan Kode Item dan Merek (jika ada)
+    const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
+    const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
+    
+    optBarang += `<option value="${b.ItemID}">${b.ItemID} ${kode}- ${b.NamaBarang}${merek}</option>`; 
+  });
   
   if(document.getElementById('masukBarang')) document.getElementById('masukBarang').innerHTML = optBarang;
   if(document.getElementById('keluarBarang')) document.getElementById('keluarBarang').innerHTML = optBarang;
