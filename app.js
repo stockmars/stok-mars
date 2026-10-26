@@ -95,8 +95,20 @@ function loadListBarang() {
 function loadListUnit() {
   if(!document.getElementById('listUnit')) return;
   let html = '';
-  masterUnit.forEach(u => { html += `<tr><td>${u.IDUnit}</td><td>${u.JenisAlat}</td><td>${u.SerialNumber}</td><td>${u.Project}</td><td>${u.StatusUnit}</td></tr>`; });
-  document.getElementById('listUnit').innerHTML = `<table><thead><tr><th>ID Unit</th><th>Jenis</th><th>Serial</th><th>Project</th><th>Status</th></tr></thead><tbody>${html}</tbody></table>`;
+  masterUnit.forEach(u => { 
+    html += `<tr>
+      <td>${u.IDUnit}</td>
+      <td>${u.JenisAlat}</td>
+      <td>${u.SerialNumber}</td>
+      <td>${u.Project}</td>
+      <td>${u.StatusUnit}</td>
+      <td>
+        <button onclick="editUnit('${u.UnitID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapusUnit('${u.UnitID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      </td>
+    </tr>`; 
+  });
+  document.getElementById('listUnit').innerHTML = `<table><thead><tr><th>ID Unit</th><th>Jenis</th><th>Serial</th><th>Project</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
 }
 
 function filterBarang() {
@@ -435,3 +447,90 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadInitialData();
   }
 });
+
+// ============================================
+// CRUD UNIT
+// ============================================
+function bukaFormUnit() {
+  document.getElementById('judulFormUnit').textContent = 'Tambah Unit Baru';
+  document.getElementById('baruUnitID').value = ''; 
+  document.getElementById('baruIdUnit').value = '';
+  document.getElementById('baruSerialNumber').value = '';
+  document.getElementById('baruProject').value = 'NPM';
+  document.getElementById('baruLokasi').value = 'Matarape';
+  document.getElementById('baruModelUnit').value = '';
+  document.getElementById('baruHM').value = '0';
+  document.getElementById('formTambahUnit').classList.remove('hidden'); 
+  document.getElementById('msgTambahUnit').textContent = '';
+}
+
+function editUnit(unitId) {
+  const unit = masterUnit.find(u => u.UnitID === unitId);
+  if(!unit) return;
+  
+  document.getElementById('judulFormUnit').textContent = 'Edit Unit: ' + unit.IDUnit;
+  document.getElementById('baruUnitID').value = unit.UnitID;
+  document.getElementById('baruIdUnit').value = unit.IDUnit;
+  document.getElementById('baruJenisAlat').value = unit.JenisAlat;
+  document.getElementById('baruSerialNumber').value = unit.SerialNumber;
+  document.getElementById('baruProject').value = unit.Project;
+  document.getElementById('baruLokasi').value = unit.Lokasi;
+  document.getElementById('baruModelUnit').value = unit.ModelUnit !== '-' ? unit.ModelUnit : '';
+  document.getElementById('baruHM').value = unit.HourMeterTerakhir;
+  
+  document.getElementById('formTambahUnit').classList.remove('hidden'); 
+  document.getElementById('msgTambahUnit').textContent = '';
+}
+
+function konfirmasiHapusUnit(unitId) {
+  if(confirm('Apakah Anda yakin ingin menghapus unit ini? Data yang dihapus tidak bisa dikembalikan.')) {
+    hapusUnitData(unitId);
+  }
+}
+
+async function hapusUnitData(unitId) {
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusUnit', data: { unitId } }) });
+    const result = await res.json();
+    if(result.success) {
+      alert(result.message);
+      await loadInitialData(); 
+    } else { alert('Gagal: ' + result.message); }
+  } catch(err) { alert('Error: ' + err.message); }
+}
+
+function tutupFormUnit() { 
+  document.getElementById('formTambahUnit').classList.add('hidden'); 
+}
+
+async function submitTambahUnit(e) {
+  e.preventDefault();
+  const msg = document.getElementById('msgTambahUnit');
+  msg.textContent = 'Menyimpan...';
+  msg.className = '';
+  
+  const unitId = document.getElementById('baruUnitID').value;
+  const actionType = unitId ? 'updateUnit' : 'tambahUnit';
+  
+  const data = { 
+    unitId: unitId,
+    idUnit: document.getElementById('baruIdUnit').value,
+    jenisAlat: document.getElementById('baruJenisAlat').value,
+    serialNumber: document.getElementById('baruSerialNumber').value,
+    project: document.getElementById('baruProject').value,
+    lokasi: document.getElementById('baruLokasi').value,
+    modelUnit: document.getElementById('baruModelUnit').value,
+    hm: document.getElementById('baruHM').value 
+  };
+  
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
+    const result = await res.json();
+    if (result.success) { 
+      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
+      await loadInitialData(); 
+      setTimeout(() => { tutupFormUnit(); msg.textContent = ''; }, 1500); 
+    }
+    else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
+  } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
+}
