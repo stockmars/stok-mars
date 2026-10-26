@@ -67,9 +67,13 @@ function fillDropdowns() {
   if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optBarang;
 
   // Isi Dropdown Kartu Stok (tetap pakai select)
+    // Isi Dropdown Kartu Stok dengan Kode & Merek
   let optKartu = '<option value="">-- Pilih Barang --</option>';
-  masterBarang.forEach(b => { optKartu += `<option value="${b.ItemID}">${b.ItemID} - ${b.NamaBarang}</option>`; });
-  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optKartu;
+  masterBarang.forEach(b => { 
+    const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
+    const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
+    optKartu += `<option value="${b.ItemID}">${b.ItemID} ${kode}- ${b.NamaBarang}${merek}</option>`; 
+  });
 
   // Isi Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
