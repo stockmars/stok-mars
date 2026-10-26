@@ -111,12 +111,18 @@
           </div>
         </div>
 
-        <!-- Barang Masuk -->
+               <!-- Barang Masuk -->
         <div id="page-masuk" class="content hidden">
           <h3>Barang Masuk</h3>
           <form id="formMasuk" onsubmit="submitMasuk(event)">
             <label>Tanggal</label><input type="date" id="masukTanggal" required>
-            <label>Barang</label><select id="masukBarang" required></select>
+            
+            <!-- GANTI BAGIAN INI -->
+            <label>Cari & Pilih Barang *</label>
+            <input list="listBarangMasuk" id="masukBarangInput" placeholder="Ketik nama atau kode barang..." autocomplete="off" required style="width:100%; padding:10px; margin-bottom:16px; border: 1px solid #ddd; border-radius: 8px;">
+            <datalist id="listBarangMasuk"></datalist>
+            <input type="hidden" id="masukBarang">
+            
             <label>Jumlah</label><input type="number" id="masukQty" required min="1">
             <label>Supplier</label><input type="text" id="masukSupplier">
             <label>Keterangan</label><input type="text" id="masukKeterangan">
@@ -125,19 +131,22 @@
           <p id="masukMessage"></p>
         </div>
 
-        <!-- Barang Keluar -->
+               <!-- Barang Keluar -->
         <div id="page-keluar" class="content hidden">
           <h3>Barang Keluar</h3>
           <form id="formKeluar" onsubmit="submitKeluar(event)">
             <label>Tanggal</label><input type="date" id="keluarTanggal" required>
-            <label>Barang</label><select id="keluarBarang" required></select>
-            <label>Jumlah</label><input type="number" id="keluarQty" required min="1">
             
+            <!-- GANTI BAGIAN INI -->
+            <label>Cari & Pilih Barang *</label>
+            <input list="listBarangKeluar" id="keluarBarangInput" placeholder="Ketik nama atau kode barang..." autocomplete="off" required style="width:100%; padding:10px; margin-bottom:16px; border: 1px solid #ddd; border-radius: 8px;">
+            <datalist id="listBarangKeluar"></datalist>
+            <input type="hidden" id="keluarBarang">
+            
+            <label>Jumlah</label><input type="number" id="keluarQty" required min="1">
             <label>Project Name</label><input type="text" id="keluarProject" placeholder="Contoh: NPM" required>
             <label>Lokasi</label><input type="text" id="keluarLokasi" placeholder="Contoh: Matarape" required>
-            
             <label>Unit</label><select id="keluarUnit" required></select>
-            
             <label>Keterangan</label><input type="text" id="keluarKeterangan">
             <button type="submit">SIMPAN</button>
           </form>
