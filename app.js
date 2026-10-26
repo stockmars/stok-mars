@@ -27,10 +27,13 @@ async function doLogin() {
   } catch (err) { msg.textContent = 'Error: ' + err.message; }
 }
 
-function doLogout() { localStorage.removeItem('user'); location.reload(); }
+function doLogout() { 
+  localStorage.removeItem('user'); 
+  location.reload(); 
+}
 
 // ============================================
-// LOAD DATA
+// LOAD DATA AWAL
 // ============================================
 async function loadInitialData() {
   try {
@@ -50,9 +53,11 @@ async function loadInitialData() {
     fillDropdowns();
     loadListBarang();
     loadListUnit();
-    loadListSupplier(); // Panggil fungsi ini
+    loadListSupplier();
     loadDashboard();
-  } catch (error) { console.error("Gagal load data", error); }
+  } catch (error) { 
+    console.error("Gagal load data", error); 
+  }
 }
 
 // ============================================
@@ -70,7 +75,7 @@ function fillDropdowns() {
   if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optDatalist;
   if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optDatalist;
 
-  // 2. Isi Dropdown Select untuk Kartu Stok (Menggunakan format <option value="...">)
+  // 2. Isi Dropdown Select untuk Kartu Stok
   let optSelect = '<option value="">-- Pilih Barang --</option>';
   masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
@@ -84,16 +89,18 @@ function fillDropdowns() {
   masterUnit.forEach(u => { optUnit += `<option value="${u.IDUnit}">${u.IDUnit} - ${u.SerialNumber}</option>`; });
   if(document.getElementById('keluarUnit')) document.getElementById('keluarUnit').innerHTML = optUnit;
   if(document.getElementById('filterUnit')) document.getElementById('filterUnit').innerHTML = '<option value="">Semua Unit</option>' + optUnit;
-    // Isi Dropdown Supplier
+  
+  // 4. Isi Dropdown Supplier
   let optSupplier = '<option value="">-- Pilih Supplier --</option>';
   masterSupplier.forEach(s => { optSupplier += `<option value="${s.NamaSupplier}">${s.NamaSupplier}</option>`; });
   if(document.getElementById('masukSupplier')) document.getElementById('masukSupplier').innerHTML = optSupplier;
 
-  // 4. Set Tanggal Hari Ini
+  // 5. Set Tanggal Hari Ini
   const today = new Date().toISOString().split('T')[0];
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
 }
+
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
@@ -132,6 +139,7 @@ function loadListUnit() {
   });
   document.getElementById('listUnit').innerHTML = `<table><thead><tr><th>ID Unit</th><th>Jenis</th><th>Serial</th><th>Project</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
 }
+
 function loadListSupplier() {
   if(!document.getElementById('listSupplier')) return;
   let html = '';
@@ -150,6 +158,7 @@ function loadListSupplier() {
   });
   document.getElementById('listSupplier').innerHTML = `<table><thead><tr><th>ID</th><th>Nama Supplier</th><th>Alamat</th><th>Kontak</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
 }
+
 function filterBarang() {
   const q = document.getElementById('searchBarang').value.toLowerCase();
   const rows = document.querySelectorAll('#listBarang tbody tr');
@@ -179,7 +188,6 @@ async function submitMasuk(e) {
   const msg = document.getElementById('masukMessage');
   msg.textContent = 'Menyimpan...';
   
-  // Mencari ID Barang berdasarkan teks yang diketik di input
   const inputText = document.getElementById('masukBarangInput').value;
   const barang = masterBarang.find(b => inputText.includes(b.ItemID));
   
@@ -187,7 +195,7 @@ async function submitMasuk(e) {
 
   const data = {
     tanggal: document.getElementById('masukTanggal').value,
-    itemId: barang.ItemID, // ID yang dikirim ke database
+    itemId: barang.ItemID,
     qty: Number(document.getElementById('masukQty').value),
     supplier: document.getElementById('masukSupplier').value,
     keterangan: document.getElementById('masukKeterangan').value,
@@ -213,7 +221,6 @@ async function submitKeluar(e) {
   const msg = document.getElementById('keluarMessage');
   msg.textContent = 'Menyimpan...';
   
-  // Mencari ID Barang berdasarkan teks yang diketik
   const inputText = document.getElementById('keluarBarangInput').value;
   const barang = masterBarang.find(b => inputText.includes(b.ItemID));
   
@@ -224,7 +231,7 @@ async function submitKeluar(e) {
   
   const data = {
     tanggal: document.getElementById('keluarTanggal').value,
-    itemId: barang.ItemID, // ID yang dikirim ke database
+    itemId: barang.ItemID,
     qty: Number(document.getElementById('keluarQty').value),
     project: document.getElementById('keluarProject').value,
     lokasi: document.getElementById('keluarLokasi').value,
@@ -253,7 +260,7 @@ async function submitKeluar(e) {
 }
 
 // ============================================
-// KARTU STOK
+// KARTU STOK & CETAK
 // ============================================
 async function loadKartu() {
   const itemId = document.getElementById('kartuBarangSelect').value;
@@ -261,7 +268,6 @@ async function loadKartu() {
   const tglAwal = document.getElementById('filterKartuTglAwal').value;
   const tglAkhir = document.getElementById('filterKartuTglAkhir').value;
   
-  // AMBIL DATA LOKASI DAN TANGGAL MANUAL
   const inputLokasi = document.getElementById('inputLokasiCetak').value || 'NPM Matarape';
   const inputTanggal = document.getElementById('inputTanggalCetak').value;
 
@@ -278,7 +284,6 @@ async function loadKartu() {
     const result = await res.json();
     let transaksi = result.data;
     
-    // Filter berdasarkan tanggal (jika diisi)
     if (tglAwal || tglAkhir) {
       transaksi = transaksi.filter(t => {
         const tanggalTrx = new Date(t.TanggalTransaksi).setHours(0,0,0,0);
@@ -325,7 +330,6 @@ async function loadKartu() {
       });
     }
 
-    // FORMAT TANGGAL LAPORAN DARI INPUT MANUAL
     let tanggalCetakStr = "";
     if (inputTanggal) {
       const d = new Date(inputTanggal);
@@ -379,6 +383,15 @@ async function loadKartu() {
       </div>
     `;
   } catch (err) { container.innerHTML = `<p style="color: red; text-align: center;">Gagal: ${err.message}</p>`; }
+}
+
+function cetakLaporan() {
+  const content = document.getElementById('kartuContent').innerHTML;
+  if (content.includes('Silakan pilih barang terlebih dahulu')) {
+    alert('Silakan pilih barang terlebih dahulu sebelum mencetak!');
+    return;
+  }
+  window.print();
 }
 
 // ============================================
@@ -518,53 +531,6 @@ async function submitTambahBarang(e) {
 }
 
 // ============================================
-// NAVIGASI
-// ============================================
-function showPage(page) {
-  document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
-  document.getElementById('page-' + page).classList.remove('hidden');
-  if (page === 'laporanUnit') {
-      if (page === 'kartu') {
-    if(!document.getElementById('filterKartuTglAwal').value) {
-      const now = new Date();
-      document.getElementById('filterKartuTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      document.getElementById('filterKartuTglAkhir').value = now.toISOString().split('T')[0];
-    }
-  }
-    if(!document.getElementById('filterTglAwal').value) {
-      const now = new Date();
-      document.getElementById('filterTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      document.getElementById('filterTglAkhir').value = now.toISOString().split('T')[0];
-    }
-    loadLaporanUnit();
-  }
-}
-  if (page === 'kartu') {
-    if(!document.getElementById('filterKartuTglAwal').value) {
-      const now = new Date();
-      document.getElementById('filterKartuTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      document.getElementById('filterKartuTglAkhir').value = now.toISOString().split('T')[0];
-    }
-    // Set Tanggal Laporan Otomatis
-    if(!document.getElementById('inputTanggalCetak').value) {
-      document.getElementById('inputTanggalCetak').value = new Date().toISOString().split('T')[0];
-    }
-  }
-
-function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
-
-window.addEventListener('DOMContentLoaded', async () => {
-  const saved = localStorage.getItem('user');
-  if (saved) {
-    currentUser = JSON.parse(saved);
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('mainApp').classList.remove('hidden');
-    document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
-    await loadInitialData();
-  }
-});
-
-// ============================================
 // CRUD UNIT
 // ============================================
 function bukaFormUnit() {
@@ -650,23 +616,7 @@ async function submitTambahUnit(e) {
     else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
-// ============================================
-// ============================================
-// FUNGSI CETAK LAPORAN
-// ============================================
-function cetakLaporan() {
-  // Mengambil isi dari kartuContent
-  const content = document.getElementById('kartuContent').innerHTML;
-  
-  if (content.includes('Silakan pilih barang terlebih dahulu')) {
-    alert('Silakan pilih barang terlebih dahulu sebelum mencetak!');
-    return;
-  }
-  
-  // Panggil fungsi print bawaan browser
-  // (CSS sudah mengatur agar yang tercetak hanya bagian tabel)
-  window.print();
-}
+
 // ============================================
 // CRUD SUPPLIER
 // ============================================
@@ -742,3 +692,44 @@ async function submitTambahSupplier(e) {
     else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
+
+// ============================================
+// NAVIGASI & AUTO LOGIN
+// ============================================
+function showPage(page) {
+  document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
+  document.getElementById('page-' + page).classList.remove('hidden');
+  
+  if (page === 'laporanUnit') {
+    if(!document.getElementById('filterTglAwal').value) {
+      const now = new Date();
+      document.getElementById('filterTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('filterTglAkhir').value = now.toISOString().split('T')[0];
+    }
+    loadLaporanUnit();
+  }
+
+  if (page === 'kartu') {
+    if(!document.getElementById('filterKartuTglAwal').value) {
+      const now = new Date();
+      document.getElementById('filterKartuTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('filterKartuTglAkhir').value = now.toISOString().split('T')[0];
+    }
+    if(!document.getElementById('inputTanggalCetak').value) {
+      document.getElementById('inputTanggalCetak').value = new Date().toISOString().split('T')[0];
+    }
+  }
+}
+
+function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const saved = localStorage.getItem('user');
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
+    await loadInitialData();
+  }
+});
