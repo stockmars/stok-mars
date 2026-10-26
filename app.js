@@ -519,6 +519,13 @@ function showPage(page) {
   document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
   if (page === 'laporanUnit') {
+      if (page === 'kartu') {
+    if(!document.getElementById('filterKartuTglAwal').value) {
+      const now = new Date();
+      document.getElementById('filterKartuTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('filterKartuTglAkhir').value = now.toISOString().split('T')[0];
+    }
+  }
     if(!document.getElementById('filterTglAwal').value) {
       const now = new Date();
       document.getElementById('filterTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
