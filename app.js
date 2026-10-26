@@ -54,40 +54,37 @@ async function loadInitialData() {
 // TAMPILAN
 // ============================================
 function fillDropdowns() {
-  // Isi Datalist untuk fitur pencarian barang
-  let optBarang = '';
+  // 1. Isi Datalist untuk form Barang Masuk & Keluar (Fitur Pencarian)
+  let optDatalist = '';
   masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
     const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
-    // Value datalist berisi teks lengkap agar bisa dicari
-    optBarang += `<option value="${b.ItemID} - ${b.NamaBarang} ${kode}${merek}"></option>`; 
+    optDatalist += `<option value="${b.ItemID} - ${b.NamaBarang} ${kode}${merek}"></option>`; 
   });
   
-  if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optBarang;
-  if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optBarang;
-  // TAMBAHKAN BARIS INI UNTUK MENGISI DROPDOWN KARTU STOK
-  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optBarang;
+  if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optDatalist;
+  if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optDatalist;
 
-  // Isi Dropdown Kartu Stok (tetap pakai select)
-    // Isi Dropdown Kartu Stok dengan Kode & Merek
-  let optKartu = '<option value="">-- Pilih Barang --</option>';
+  // 2. Isi Dropdown Select untuk Kartu Stok (Menggunakan format <option value="...">)
+  let optSelect = '<option value="">-- Pilih Barang --</option>';
   masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
     const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
-    optKartu += `<option value="${b.ItemID}">${b.ItemID} ${kode}- ${b.NamaBarang}${merek}</option>`; 
+    optSelect += `<option value="${b.ItemID}">${b.ItemID} ${kode}- ${b.NamaBarang}${merek}</option>`; 
   });
+  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optSelect;
 
-  // Isi Dropdown Unit
+  // 3. Isi Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
   masterUnit.forEach(u => { optUnit += `<option value="${u.IDUnit}">${u.IDUnit} - ${u.SerialNumber}</option>`; });
   if(document.getElementById('keluarUnit')) document.getElementById('keluarUnit').innerHTML = optUnit;
   if(document.getElementById('filterUnit')) document.getElementById('filterUnit').innerHTML = '<option value="">Semua Unit</option>' + optUnit;
 
+  // 4. Set Tanggal Hari Ini
   const today = new Date().toISOString().split('T')[0];
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
 }
-
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
