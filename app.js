@@ -539,6 +539,17 @@ function showPage(page) {
     loadLaporanUnit();
   }
 }
+  if (page === 'kartu') {
+    if(!document.getElementById('filterKartuTglAwal').value) {
+      const now = new Date();
+      document.getElementById('filterKartuTglAwal').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('filterKartuTglAkhir').value = now.toISOString().split('T')[0];
+    }
+    // Set Tanggal Laporan Otomatis
+    if(!document.getElementById('inputTanggalCetak').value) {
+      document.getElementById('inputTanggalCetak').value = new Date().toISOString().split('T')[0];
+    }
+  }
 
 function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
