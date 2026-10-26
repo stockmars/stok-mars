@@ -159,8 +159,54 @@
 
         <!-- Master Unit -->
         <div id="page-unit" class="content hidden">
-          <h3>Master Unit</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0;">Master Unit</h3>
+            <button onclick="bukaFormUnit()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Tambah Unit</button>
+          </div>
+          
           <div id="listUnit"></div>
+
+          <!-- Form Tambah/Edit Unit (Tersembunyi) -->
+          <div id="formTambahUnit" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+            <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+              <h3 id="judulFormUnit" style="margin-top: 0; color: #1a73e8;">Tambah Unit Baru</h3>
+              <form onsubmit="submitTambahUnit(event)">
+                <input type="hidden" id="baruUnitID">
+                
+                <label>ID Unit (Kode Unik) *</label>
+                <input type="text" id="baruIdUnit" placeholder="Contoh: GGM EX 041" required>
+                
+                <label>Jenis Alat *</label>
+                <select id="baruJenisAlat" required>
+                  <option value="PC 210">PC 210</option>
+                  <option value="PC 300">PC 300</option>
+                  <option value="Bulldozer">Bulldozer</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+
+                <label>Serial Number (SN) *</label>
+                <input type="text" id="baruSerialNumber" placeholder="Contoh: C01077" required>
+
+                <label>Project</label>
+                <input type="text" id="baruProject" value="NPM">
+
+                <label>Lokasi</label>
+                <input type="text" id="baruLokasi" value="Matarape">
+
+                <label>Model Unit</label>
+                <input type="text" id="baruModelUnit" placeholder="Contoh: PC 210">
+
+                <label>Hour Meter (HM) Terakhir</label>
+                <input type="number" id="baruHM" value="0" min="0">
+                
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                  <button type="button" onclick="tutupFormUnit()" style="background: #ccc; color: #333; width: 50%;">Batal</button>
+                  <button type="submit" style="width: 50%;">Simpan</button>
+                </div>
+              </form>
+              <p id="msgTambahUnit" style="text-align: center; margin-top: 12px;"></p>
+            </div>
+          </div>
         </div>
 
         <!-- Laporan Unit -->
