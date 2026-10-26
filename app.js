@@ -66,8 +66,21 @@ function fillDropdowns() {
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
-  masterBarang.forEach(b => { html += `<tr><td>${b.ItemID}</td><td>${b.NamaBarang}</td><td>${b.Kategori}</td><td>${b.Satuan}</td><td>${b.StokMinimum}</td></tr>`; });
-  document.getElementById('listBarang').innerHTML = `<table><thead><tr><th>ID</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Min</th></tr></thead><tbody>${html}</tbody></table>`;
+  masterBarang.forEach(b => { 
+    html += `<tr>
+      <td>${b.ItemID}</td>
+      <td>${b.KodeItem || '-'}</td>
+      <td>${b.NamaBarang}</td>
+      <td>${b.Kategori}</td>
+      <td>${b.Satuan}</td>
+      <td>${b.StokMinimum}</td>
+      <td>
+        <button onclick="editBarang('${b.ItemID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapus('${b.ItemID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      </td>
+    </tr>`; 
+  });
+  document.getElementById('listBarang').innerHTML = `<table><thead><tr><th>ID</th><th>Kode Item</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Min</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
 }
 
 function loadListUnit() {
@@ -295,22 +308,82 @@ async function loadLaporanUnit() {
   } catch (err) { container.innerHTML = '<p class="error">Error memuat laporan.</p>'; }
 }
 
-function bukaFormBarang() { document.getElementById('formTambahBarang').classList.remove('hidden'); document.getElementById('msgTambahBarang').textContent = ''; }
+function bukaFormBarang() {
+  document.getElementById('judulFormBarang').textContent = 'Tambah Barang Baru';
+  document.getElementById('baruItemID').value = ''; // Kosongkan ID (berarti tambah baru)
+  document.getElementById('baruNama').value = '';
+  document.getElementById('baruKode').value = '';
+  document.getElementById('baruMerek').value = '';
+  document.getElementById('baruMin').value = '0';
+  document.getElementById('formTambahBarang').classList.remove('hidden'); 
+  document.getElementById('msgTambahBarang').textContent = '';
+}
+
+function editBarang(itemId) {
+  const barang = masterBarang.find(b => b.ItemID === itemId);
+  if(!barang) return;
+  
+  document.getElementById('judulFormBarang').textContent = 'Edit Barang: ' + itemId;
+  document.getElementById('baruItemID').value = barang.ItemID;
+  document.getElementById('baruNama').value = barang.NamaBarang;
+  document.getElementById('baruKode').value = barang.KodeItem !== '-' ? barang.KodeItem : '';
+  document.getElementById('baruKategori').value = barang.Kategori;
+  document.getElementById('baruSatuan').value = barang.Satuan;
+  document.getElementById('baruMerek').value = barang.Merek !== '-' ? barang.Merek : '';
+  document.getElementById('baruMin').value = barang.StokMinimum;
+  
+  document.getElementById('formTambahBarang').classList.remove('hidden'); 
+  document.getElementById('msgTambahBarang').textContent = '';
+}
+
+function konfirmasiHapus(itemId) {
+  if(confirm('Apakah Anda yakin ingin menghapus barang ' + itemId + '? Data yang dihapus tidak bisa dikembalikan.')) {
+    hapusBarangData(itemId);
+  }
+}
+
+async function hapusBarangData(itemId) {
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusBarang', data: { itemId } }) });
+    const result = await res.json();
+    if(result.success) {
+      alert(result.message);
+      await loadInitialData(); // Refresh data
+    } else { alert('Gagal: ' + result.message); }
+  } catch(err) { alert('Error: ' + err.message); }
+}
 function tutupFormBarang() { document.getElementById('formTambahBarang').classList.add('hidden'); document.getElementById('baruNama').value = ''; document.getElementById('baruKode').value = ''; document.getElementById('baruMerek').value = ''; document.getElementById('baruMin').value = '0'; }
 
 async function submitTambahBarang(e) {
   e.preventDefault();
   const msg = document.getElementById('msgTambahBarang');
   msg.textContent = 'Menyimpan...';
-  const data = { namaBarang: document.getElementById('baruNama').value, kodeItem: document.getElementById('baruKode').value, kategori: document.getElementById('baruKategori').value, satuan: document.getElementById('baruSatuan').value, merek: document.getElementById('baruMerek').value, stokMinimum: document.getElementById('baruMin').value };
+  msg.className = '';
+  
+  const itemId = document.getElementById('baruItemID').value;
+  const actionType = itemId ? 'updateBarang' : 'tambahBarang';
+  
+  const data = { 
+    itemId: itemId,
+    namaBarang: document.getElementById('baruNama').value, 
+    kodeItem: document.getElementById('baruKode').value, 
+    kategori: document.getElementById('baruKategori').value, 
+    satuan: document.getElementById('baruSatuan').value, 
+    merek: document.getElementById('baruMerek').value, 
+    stokMinimum: document.getElementById('baruMin').value 
+  };
+  
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'tambahBarang', data }) });
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
     const result = await res.json();
-    if (result.success) { msg.textContent = '✓ ' + result.message; msg.className = 'success'; await loadInitialData(); setTimeout(() => { tutupFormBarang(); msg.textContent = ''; }, 2000); }
+    if (result.success) { 
+      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
+      await loadInitialData(); 
+      setTimeout(() => { tutupFormBarang(); msg.textContent = ''; }, 1500); 
+    }
     else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
-
 function showPage(page) {
   document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
