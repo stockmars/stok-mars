@@ -155,13 +155,20 @@
 
         <!-- Kartu Stok -->
         <div id="page-kartu" class="content hidden">
-          <div style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-            <label style="font-weight: bold; margin-right: 10px;">Pilih Barang untuk Laporan:</label>
-            <select id="kartuBarangSelect" onchange="loadKartu()" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; min-width: 300px;">
-              <option value="">-- Pilih Barang --</option>
-            </select>
+          <div style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <label style="font-weight: bold; margin-right: 10px;">Pilih Barang untuk Laporan:</label>
+              <select id="kartuBarangSelect" onchange="loadKartu()" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; min-width: 300px;">
+                <option value="">-- Pilih Barang --</option>
+              </select>
+            </div>
+            
+            <!-- TOMBOL CETAK -->
+            <button onclick="cetakLaporan()" style="padding: 10px 16px; background: #4caf50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🖨️ Cetak Laporan</button>
           </div>
-          <div id="kartuContent" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); overflow-x: auto;">
+          
+          <!-- Area yang akan dicetak -->
+          <div id="areaCetak" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); overflow-x: auto;">
             <p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>
           </div>
         </div>
