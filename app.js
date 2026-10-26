@@ -260,6 +260,10 @@ async function loadKartu() {
   const container = document.getElementById('kartuContent');
   const tglAwal = document.getElementById('filterKartuTglAwal').value;
   const tglAkhir = document.getElementById('filterKartuTglAkhir').value;
+  
+  // AMBIL DATA LOKASI DAN TANGGAL MANUAL
+  const inputLokasi = document.getElementById('inputLokasiCetak').value || 'NPM Matarape';
+  const inputTanggal = document.getElementById('inputTanggalCetak').value;
 
   if (!itemId) { 
     container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; 
@@ -290,12 +294,7 @@ async function loadKartu() {
       });
     }
 
-    // Hitung saldo awal berdasarkan filter (jika ada tanggal mulai, saldo dihitung sampai tanggal mulai)
     let saldo = Number(barang.StokAwal) || 0;
-    
-    // (Opsional) Jika Anda ingin saldo berjalan mundur dari transaksi sebelum tglAwal, 
-    // logika ini bisa ditambahkan. Namun untuk simple-nya, kita mulai dari saldo awal barang.
-
     let rowsHtml = '';
     
     if (transaksi.length === 0) { 
@@ -326,10 +325,16 @@ async function loadKartu() {
       });
     }
 
-    // Format tanggal cetak otomatis
-    const todayStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    // FORMAT TANGGAL LAPORAN DARI INPUT MANUAL
+    let tanggalCetakStr = "";
+    if (inputTanggal) {
+      const d = new Date(inputTanggal);
+      tanggalCetakStr = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    } else {
+      tanggalCetakStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
     const currentUserName = currentUser ? currentUser.nama : 'Admin';
-    const lokasiGudang = "NPM Matarape"; // Bisa diubah jika ada master lokasi
 
     container.innerHTML = `
       <div class="laporan-header">
@@ -338,7 +343,7 @@ async function loadKartu() {
           <tr><td style="font-weight: bold;">Nama Barang</td><td>: ${barang.NamaBarang}</td></tr>
           <tr><td style="font-weight: bold;">Kode Item</td><td>: ${barang.KodeItem}</td></tr>
           <tr><td style="font-weight: bold;">Kategori</td><td>: ${barang.Kategori}</td></tr>
-          <tr><td style="font-weight: bold;">Lokasi</td><td>: ${lokasiGudang}</td></tr>
+          <tr><td style="font-weight: bold;">Lokasi</td><td>: ${inputLokasi}</td></tr>
         </table>
       </div>
       <div class="laporan-title">STOCK OPNAME</div>
@@ -366,7 +371,7 @@ async function loadKartu() {
         <tbody>${rowsHtml}</tbody>
       </table>
       <div style="margin-top: 20px; font-size: 14px;">
-        ${lokasiGudang}, ${todayStr}
+        ${inputLokasi}, ${tanggalCetakStr}
       </div>
       <div class="laporan-ttd">
         <div class="ttd-box"><p>Yang Membuat,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${currentUserName}</p></div>
