@@ -258,19 +258,49 @@ async function submitKeluar(e) {
 async function loadKartu() {
   const itemId = document.getElementById('kartuBarangSelect').value;
   const container = document.getElementById('kartuContent');
-  if (!itemId) { container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; return; }
+  const tglAwal = document.getElementById('filterKartuTglAwal').value;
+  const tglAkhir = document.getElementById('filterKartuTglAkhir').value;
+
+  if (!itemId) { 
+    container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; 
+    return; 
+  }
+  
   container.innerHTML = '<p style="text-align: center;">Memuat data laporan...</p>';
 
   try {
     const barang = masterBarang.find(b => b.ItemID === itemId);
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getTransaksi', data: { itemId } }) });
     const result = await res.json();
-    const transaksi = result.data;
+    let transaksi = result.data;
+    
+    // Filter berdasarkan tanggal (jika diisi)
+    if (tglAwal || tglAkhir) {
+      transaksi = transaksi.filter(t => {
+        const tanggalTrx = new Date(t.TanggalTransaksi).setHours(0,0,0,0);
+        if (tglAwal) {
+          const awal = new Date(tglAwal).setHours(0,0,0,0);
+          if (tanggalTrx < awal) return false;
+        }
+        if (tglAkhir) {
+          const akhir = new Date(tglAkhir).setHours(23,59,59,999);
+          if (tanggalTrx > akhir) return false;
+        }
+        return true;
+      });
+    }
+
+    // Hitung saldo awal berdasarkan filter (jika ada tanggal mulai, saldo dihitung sampai tanggal mulai)
     let saldo = Number(barang.StokAwal) || 0;
+    
+    // (Opsional) Jika Anda ingin saldo berjalan mundur dari transaksi sebelum tglAwal, 
+    // logika ini bisa ditambahkan. Namun untuk simple-nya, kita mulai dari saldo awal barang.
+
     let rowsHtml = '';
     
-    if (transaksi.length === 0) { rowsHtml = `<tr><td colspan="11">Belum ada transaksi untuk barang ini.</td></tr>`; } 
-    else {
+    if (transaksi.length === 0) { 
+      rowsHtml = `<tr><td colspan="11">Tidak ada transaksi pada periode ini.</td></tr>`; 
+    } else {
       transaksi.forEach((t, index) => {
         const isMasuk = t.JenisTransaksi === 'MASUK';
         const qtyMasuk = isMasuk ? Number(t.QtyMasuk) : 0;
@@ -296,8 +326,10 @@ async function loadKartu() {
       });
     }
 
+    // Format tanggal cetak otomatis
     const todayStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
     const currentUserName = currentUser ? currentUser.nama : 'Admin';
+    const lokasiGudang = "NPM Matarape"; // Bisa diubah jika ada master lokasi
 
     container.innerHTML = `
       <div class="laporan-header">
@@ -306,7 +338,7 @@ async function loadKartu() {
           <tr><td style="font-weight: bold;">Nama Barang</td><td>: ${barang.NamaBarang}</td></tr>
           <tr><td style="font-weight: bold;">Kode Item</td><td>: ${barang.KodeItem}</td></tr>
           <tr><td style="font-weight: bold;">Kategori</td><td>: ${barang.Kategori}</td></tr>
-          <tr><td style="font-weight: bold;">Lokasi</td><td>: NPM Matarape</td></tr>
+          <tr><td style="font-weight: bold;">Lokasi</td><td>: ${lokasiGudang}</td></tr>
         </table>
       </div>
       <div class="laporan-title">STOCK OPNAME</div>
@@ -333,7 +365,9 @@ async function loadKartu() {
         </thead>
         <tbody>${rowsHtml}</tbody>
       </table>
-      <div style="margin-top: 20px; font-size: 14px;">Matarape, ${todayStr}</div>
+      <div style="margin-top: 20px; font-size: 14px;">
+        ${lokasiGudang}, ${todayStr}
+      </div>
       <div class="laporan-ttd">
         <div class="ttd-box"><p>Yang Membuat,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${currentUserName}</p></div>
         <div class="ttd-box"><p>Yang Menyetujui,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">Dodi Saputra Sahupala</p></div>
