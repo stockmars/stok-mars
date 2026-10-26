@@ -4,6 +4,9 @@ let currentUser = null;
 let masterBarang = [];
 let masterUnit = [];
 
+// ============================================
+// LOGIN & LOGOUT
+// ============================================
 async function doLogin() {
   const email = document.getElementById('loginEmail').value;
   const msg = document.getElementById('loginMessage');
@@ -25,6 +28,9 @@ async function doLogin() {
 
 function doLogout() { localStorage.removeItem('user'); location.reload(); }
 
+// ============================================
+// LOAD DATA
+// ============================================
 async function loadInitialData() {
   try {
     const [resBarang, resUnit] = await Promise.all([
@@ -44,6 +50,9 @@ async function loadInitialData() {
   } catch (error) { console.error("Gagal load data", error); }
 }
 
+// ============================================
+// TAMPILAN
+// ============================================
 function fillDropdowns() {
   let optBarang = '<option value="">-- Pilih Barang --</option>';
   masterBarang.forEach(b => { optBarang += `<option value="${b.ItemID}">${b.ItemID} - ${b.NamaBarang}</option>`; });
@@ -111,6 +120,9 @@ async function loadDashboard() {
   } catch(e) {}
 }
 
+// ============================================
+// SIMPAN TRANSAKSI
+// ============================================
 async function submitMasuk(e) {
   e.preventDefault(); 
   const msg = document.getElementById('masukMessage');
@@ -169,6 +181,9 @@ async function submitKeluar(e) {
   }
 }
 
+// ============================================
+// KARTU STOK
+// ============================================
 async function loadKartu() {
   const itemId = document.getElementById('kartuBarangSelect').value;
   const container = document.getElementById('kartuContent');
@@ -256,6 +271,9 @@ async function loadKartu() {
   } catch (err) { container.innerHTML = `<p style="color: red; text-align: center;">Gagal: ${err.message}</p>`; }
 }
 
+// ============================================
+// LAPORAN UNIT
+// ============================================
 async function loadLaporanUnit() {
   const container = document.getElementById('listLaporanUnit');
   container.innerHTML = '<p>Memuat data...</p>';
@@ -307,7 +325,7 @@ async function loadLaporanUnit() {
 }
 
 // ============================================
-// CRUD BARANG (TAMBAH, EDIT, HAPUS)
+// CRUD BARANG
 // ============================================
 function bukaFormBarang() {
   document.getElementById('judulFormBarang').textContent = 'Tambah Barang Baru';
@@ -389,6 +407,9 @@ async function submitTambahBarang(e) {
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
 
+// ============================================
+// NAVIGASI
+// ============================================
 function showPage(page) {
   document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
