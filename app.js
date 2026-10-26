@@ -3,6 +3,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbx7tpArksznuYUx3XQ7_qZp
 let currentUser = null;
 let masterBarang = [];
 let masterUnit = [];
+let masterSupplier = [];
 
 // ============================================
 // LOGIN & LOGOUT
@@ -33,19 +34,23 @@ function doLogout() { localStorage.removeItem('user'); location.reload(); }
 // ============================================
 async function loadInitialData() {
   try {
-    const [resBarang, resUnit] = await Promise.all([
+    const [resBarang, resUnit, resSupplier] = await Promise.all([
       fetch(API_URL + '?action=getMasterBarang'),
-      fetch(API_URL + '?action=getMasterUnit')
+      fetch(API_URL + '?action=getMasterUnit'),
+      fetch(API_URL + '?action=getMasterSupplier')
     ]);
     const jsonBarang = await resBarang.json();
     const jsonUnit = await resUnit.json();
+    const jsonSupplier = await resSupplier.json();
     
     if (jsonBarang.success) masterBarang = jsonBarang.data;
     if (jsonUnit.success) masterUnit = jsonUnit.data;
+    if (jsonSupplier.success) masterSupplier = jsonSupplier.data;
 
     fillDropdowns();
     loadListBarang();
     loadListUnit();
+    loadListSupplier(); // Panggil fungsi ini
     loadDashboard();
   } catch (error) { console.error("Gagal load data", error); }
 }
@@ -79,6 +84,10 @@ function fillDropdowns() {
   masterUnit.forEach(u => { optUnit += `<option value="${u.IDUnit}">${u.IDUnit} - ${u.SerialNumber}</option>`; });
   if(document.getElementById('keluarUnit')) document.getElementById('keluarUnit').innerHTML = optUnit;
   if(document.getElementById('filterUnit')) document.getElementById('filterUnit').innerHTML = '<option value="">Semua Unit</option>' + optUnit;
+    // Isi Dropdown Supplier
+  let optSupplier = '<option value="">-- Pilih Supplier --</option>';
+  masterSupplier.forEach(s => { optSupplier += `<option value="${s.NamaSupplier}">${s.NamaSupplier}</option>`; });
+  if(document.getElementById('masukSupplier')) document.getElementById('masukSupplier').innerHTML = optSupplier;
 
   // 4. Set Tanggal Hari Ini
   const today = new Date().toISOString().split('T')[0];
@@ -123,7 +132,24 @@ function loadListUnit() {
   });
   document.getElementById('listUnit').innerHTML = `<table><thead><tr><th>ID Unit</th><th>Jenis</th><th>Serial</th><th>Project</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
 }
-
+function loadListSupplier() {
+  if(!document.getElementById('listSupplier')) return;
+  let html = '';
+  masterSupplier.forEach(s => { 
+    html += `<tr>
+      <td>${s.SupplierID}</td>
+      <td>${s.NamaSupplier}</td>
+      <td>${s.Alamat}</td>
+      <td>${s.Kontak}</td>
+      <td>${s.StatusAktif}</td>
+      <td>
+        <button onclick="editSupplier('${s.SupplierID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapusSupplier('${s.SupplierID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      </td>
+    </tr>`; 
+  });
+  document.getElementById('listSupplier').innerHTML = `<table><thead><tr><th>ID</th><th>Nama Supplier</th><th>Alamat</th><th>Kontak</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
+}
 function filterBarang() {
   const q = document.getElementById('searchBarang').value.toLowerCase();
   const rows = document.querySelectorAll('#listBarang tbody tr');
@@ -583,4 +609,79 @@ function cetakLaporan() {
   // Panggil fungsi print bawaan browser
   // (CSS sudah mengatur agar yang tercetak hanya bagian tabel)
   window.print();
+}
+// ============================================
+// CRUD SUPPLIER
+// ============================================
+function bukaFormSupplier() {
+  document.getElementById('judulFormSupplier').textContent = 'Tambah Supplier Baru';
+  document.getElementById('baruSupplierID').value = ''; 
+  document.getElementById('baruNamaSupplier').value = '';
+  document.getElementById('baruAlamat').value = '';
+  document.getElementById('baruKontak').value = '';
+  document.getElementById('formTambahSupplier').classList.remove('hidden'); 
+  document.getElementById('msgTambahSupplier').textContent = '';
+}
+
+function editSupplier(supplierId) {
+  const supplier = masterSupplier.find(s => s.SupplierID === supplierId);
+  if(!supplier) return;
+  
+  document.getElementById('judulFormSupplier').textContent = 'Edit Supplier: ' + supplier.NamaSupplier;
+  document.getElementById('baruSupplierID').value = supplier.SupplierID;
+  document.getElementById('baruNamaSupplier').value = supplier.NamaSupplier;
+  document.getElementById('baruAlamat').value = supplier.Alamat !== '-' ? supplier.Alamat : '';
+  document.getElementById('baruKontak').value = supplier.Kontak !== '-' ? supplier.Kontak : '';
+  
+  document.getElementById('formTambahSupplier').classList.remove('hidden'); 
+  document.getElementById('msgTambahSupplier').textContent = '';
+}
+
+function konfirmasiHapusSupplier(supplierId) {
+  if(confirm('Apakah Anda yakin ingin menghapus supplier ini?')) {
+    hapusSupplierData(supplierId);
+  }
+}
+
+async function hapusSupplierData(supplierId) {
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusSupplier', data: { supplierId } }) });
+    const result = await res.json();
+    if(result.success) {
+      alert(result.message);
+      await loadInitialData(); 
+    } else { alert('Gagal: ' + result.message); }
+  } catch(err) { alert('Error: ' + err.message); }
+}
+
+function tutupFormSupplier() { 
+  document.getElementById('formTambahSupplier').classList.add('hidden'); 
+}
+
+async function submitTambahSupplier(e) {
+  e.preventDefault();
+  const msg = document.getElementById('msgTambahSupplier');
+  msg.textContent = 'Menyimpan...';
+  msg.className = '';
+  
+  const supplierId = document.getElementById('baruSupplierID').value;
+  const actionType = supplierId ? 'updateSupplier' : 'tambahSupplier';
+  
+  const data = { 
+    supplierId: supplierId,
+    namaSupplier: document.getElementById('baruNamaSupplier').value, 
+    alamat: document.getElementById('baruAlamat').value, 
+    kontak: document.getElementById('baruKontak').value 
+  };
+  
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
+    const result = await res.json();
+    if (result.success) { 
+      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
+      await loadInitialData(); 
+      setTimeout(() => { tutupFormSupplier(); msg.textContent = ''; }, 1500); 
+    }
+    else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
+  } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
 }
