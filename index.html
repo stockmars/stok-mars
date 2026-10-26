@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Part & Service NPM</title>
+  <title>STOK PART & SERVICE MARS</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <!-- LOGIN -->
     <div id="loginPage" class="page">
       <div class="login-box">
-        <h1>STOCK PART & SERVICE NPM</h1>
+        <h1>STOK PART & SERVICE MARS</h1>
         <p>Silakan login</p>
         <input type="email" id="loginEmail" placeholder="Email">
         <input type="password" id="loginPassword" placeholder="Password">
@@ -23,7 +23,7 @@
     <!-- MAIN APP -->
     <div id="mainApp" class="page hidden">
       <header>
-        <h2>STOCK PART & SERVICE NPM</h2>
+        <h2>STOK PART & SERVICE MARS</h2>
         <div class="user-info">
           <span id="userName"></span>
           <button onclick="doLogout()">Logout</button>
@@ -52,7 +52,7 @@
           <div id="dashRecent"></div>
         </div>
 
-               <!-- Master Barang -->
+        <!-- Master Barang -->
         <div id="page-barang" class="content hidden">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="margin: 0;">Master Barang</h3>
@@ -63,12 +63,12 @@
           
           <div id="listBarang"></div>
 
-          <!-- Form Tambah/Edit Barang (Tersembunyi) -->
+          <!-- Form Tambah/Edit Barang -->
           <div id="formTambahBarang" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
             <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
               <h3 id="judulFormBarang" style="margin-top: 0; color: #1a73e8;">Tambah Barang Baru</h3>
               <form onsubmit="submitTambahBarang(event)">
-                <input type="hidden" id="baruItemID"> <!-- Untuk menyimpan ID saat edit -->
+                <input type="hidden" id="baruItemID">
                 
                 <label>Nama Barang *</label>
                 <input type="text" id="baruNama" required>
@@ -111,33 +111,6 @@
           </div>
         </div>
 
-          <!-- Form Tambah Barang -->
-          <div id="formTambahBarang" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-            <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
-              <h3 style="margin-top: 0; color: #1a73e8;">Tambah Barang Baru</h3>
-              <form onsubmit="submitTambahBarang(event)">
-                <label>Nama Barang *</label><input type="text" id="baruNama" required>
-                <label>Kode Item (Opsional)</label><input type="text" id="baruKode">
-                <label>Kategori *</label>
-                <select id="baruKategori" required>
-                  <option value="Filter">Filter</option><option value="Oli">Oli</option><option value="Grease">Grease</option><option value="Lampu">Lampu</option><option value="Kawat Las">Kawat Las</option><option value="Lainnya">Lainnya</option>
-                </select>
-                <label>Satuan *</label>
-                <select id="baruSatuan" required>
-                  <option value="Pcs">Pcs</option><option value="Liter">Liter</option><option value="Pail">Pail</option><option value="Roll">Roll</option><option value="Set">Set</option>
-                </select>
-                <label>Merek</label><input type="text" id="baruMerek">
-                <label>Stok Minimum</label><input type="number" id="baruMin" value="0" min="0">
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
-                  <button type="button" onclick="tutupFormBarang()" style="background: #ccc; color: #333; width: 50%;">Batal</button>
-                  <button type="submit" style="width: 50%;">Simpan</button>
-                </div>
-              </form>
-              <p id="msgTambahBarang" style="text-align: center; margin-top: 12px;"></p>
-            </div>
-          </div>
-        </div>
-
         <!-- Barang Masuk -->
         <div id="page-masuk" class="content hidden">
           <h3>Barang Masuk</h3>
@@ -152,7 +125,7 @@
           <p id="masukMessage"></p>
         </div>
 
-               <!-- Barang Keluar -->
+        <!-- Barang Keluar -->
         <div id="page-keluar" class="content hidden">
           <h3>Barang Keluar</h3>
           <form id="formKeluar" onsubmit="submitKeluar(event)">
@@ -163,7 +136,6 @@
             <label>Project Name</label><input type="text" id="keluarProject" placeholder="Contoh: NPM" required>
             <label>Lokasi</label><input type="text" id="keluarLokasi" placeholder="Contoh: Matarape" required>
             
-            <!-- Cukup Pilih Unit, ID dan SN otomatis -->
             <label>Unit</label><select id="keluarUnit" required></select>
             
             <label>Keterangan</label><input type="text" id="keluarKeterangan">
