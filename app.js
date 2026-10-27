@@ -304,7 +304,82 @@ async function loadDashboard() {
     }
   } catch(e) {}
 }
+async function loadRiwayat() {
+  const container = document.getElementById('listRiwayat');
+  if(!container) return;
+  container.innerHTML = '<p>Memuat data...</p>';
+  
+  try {
+    const res = await fetch(API_URL + '?action=getRiwayatTransaksi');
+    const result = await res.json();
+    
+    if (result.success) {
+      if (result.data.length === 0) {
+        container.innerHTML = '<p>Belum ada transaksi.</p>';
+        return;
+      }
+      
+      let html = '';
+      result.data.forEach(t => {
+        const warnaBadge = t.jenis === 'MASUK' ? 'background:#e8f5e9; color:#2e7d32;' : 'background:#ffebee; color:#c62828;';
+        html += `<tr>
+          <td>${formatDate(t.tanggal)}</td>
+          <td><span style="padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px; ${warnaBadge}">${t.jenis}</span></td>
+          <td>${t.namaBarang}</td>
+          <td><strong>${t.qty}</strong></td>
+          <td>${t.pic}</td>
+          <td>
+            <button onclick="batalkanTransaksi('${t.trxId}', '${t.namaBarang}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Batalkan</button>
+          </td>
+        </tr>`;
+      });
+      
+      container.innerHTML = `<table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Jenis</th>
+            <th>Nama Barang</th>
+            <th>Qty</th>
+            <th>PIC</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>${html}</tbody>
+      </table>`;
+    } else {
+      container.innerHTML = `<p class="error">${result.message}</p>`;
+    }
+  } catch (err) {
+    container.innerHTML = `<p class="error">Gagal memuat data: ${err.message}</p>`;
+  }
+}
 
+function batalkanTransaksi(trxId, namaBarang) {
+  if (confirm(`Yakin ingin membatalkan transaksi untuk "${namaBarang}"?\n\nStok akan otomatis dikembalikan/disesuaikan.`)) {
+    prosesBatalTransaksi(trxId);
+  }
+}
+
+async function prosesBatalTransaksi(trxId) {
+  try {
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'hapusTransaksi', data: { trxId } }) 
+    });
+    const result = await res.json();
+    
+    if (result.success) {
+      alert('✓ ' + result.message);
+      await loadRiwayat(); // Refresh tabel riwayat
+      await loadInitialData(); // Refresh dashboard & stok
+    } else {
+      alert('Gagal: ' + result.message);
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
 // ============================================
 // SIMPAN TRANSAKSI
 // ============================================
