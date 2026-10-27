@@ -46,7 +46,7 @@ async function doLogin() {
       document.getElementById('loginPage').classList.add('hidden');
       document.getElementById('mainApp').classList.remove('hidden');
       document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
-      applyRolePermissions(); // Panggil fungsi pembatas akses
+      applyRolePermissions();
       await loadInitialData();
     } else { msg.textContent = result.message; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; }
@@ -55,6 +55,29 @@ async function doLogin() {
 function doLogout() { 
   localStorage.removeItem('user'); 
   location.reload(); 
+}
+
+// ============================================
+// HAK AKSES BERDASARKAN ROLE
+// ============================================
+function applyRolePermissions() {
+  // Sembunyikan menu Master jika yang login BUKAN HO
+  if (currentUser && currentUser.role !== 'HO') {
+    const menuMaster = document.getElementById('menuMaster');
+    if (menuMaster) menuMaster.style.display = 'none';
+    
+    // Jika sedang berada di halaman master, tendang ke dashboard
+    const isMasterPage = ['page-barang', 'page-unit', 'page-supplier', 'page-project'].some(id => {
+      const el = document.getElementById(id);
+      return el && !el.classList.contains('hidden');
+    });
+    if (isMasterPage) {
+      showPage('dashboard');
+    }
+  } else {
+    const menuMaster = document.getElementById('menuMaster');
+    if (menuMaster) menuMaster.style.display = 'block'; // Atau inline-block
+  }
 }
 
 // ============================================
@@ -148,44 +171,44 @@ function fillDropdowns() {
   const today = new Date().toISOString().split('T')[0];
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
-}
-// 7. Dropdown Project (filter Laporan Project)
-if (document.getElementById('filterProjectSelect')) {
-  let optFilterProject = '<option value="">Semua Project</option>';
-  masterProject.forEach(p => {
-    const lok = (p.Lokasi && p.Lokasi !== '-') ? ' (' + p.Lokasi + ')' : '';
-    optFilterProject += `<option value="${p.NamaProject}">${p.NamaProject}${lok}</option>`;
-  });
-  document.getElementById('filterProjectSelect').innerHTML = optFilterProject;
-}
 
-// 8. Dropdown Tahun (filter Laporan Project)
-if (document.getElementById('filterTahunanProject')) {
-  const currentYear = new Date().getFullYear();
-  let optTahun = '';
-  for (let y = currentYear - 5; y <= currentYear + 1; y++) {
-    optTahun += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
-  }
-  document.getElementById('filterTahunanProject').innerHTML = optTahun;
-}
-
-// Auto-fill lokasi saat project dipilih (dipasang sekali)
-document.addEventListener('DOMContentLoaded', () => {
-  const projSelect = document.getElementById('keluarProject');
-  if (projSelect) {
-    projSelect.addEventListener('change', function() {
-      const opt = this.options[this.selectedIndex];
-      const lokasi = opt ? opt.getAttribute('data-lokasi') : '';
-      const lokSel = document.getElementById('keluarLokasi');
-      if (lokSel && lokasi && lokasi !== '-') lokSel.value = lokasi;
+  // 7. Dropdown Project (filter Laporan Project)
+  if (document.getElementById('filterProjectSelect')) {
+    let optFilterProject = '<option value="">Semua Project</option>';
+    masterProject.forEach(p => {
+      const lok = (p.Lokasi && p.Lokasi !== '-') ? ' (' + p.Lokasi + ')' : '';
+      optFilterProject += `<option value="${p.NamaProject}">${p.NamaProject}${lok}</option>`;
     });
+    document.getElementById('filterProjectSelect').innerHTML = optFilterProject;
   }
-});
+
+  // 8. Dropdown Tahun (filter Laporan Project)
+  if (document.getElementById('filterTahunanProject')) {
+    const currentYear = new Date().getFullYear();
+    let optTahun = '';
+    for (let y = currentYear - 5; y <= currentYear + 1; y++) {
+      optTahun += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+    }
+    document.getElementById('filterTahunanProject').innerHTML = optTahun;
+  }
+}
 
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
+  
+  // Cek Role
+  const isHO = currentUser && currentUser.role === 'HO';
+
   masterBarang.forEach(b => { 
+    let tombolAksi = '-';
+    if (isHO) {
+      tombolAksi = `
+        <button onclick="editBarang('${b.ItemID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapus('${b.ItemID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      `;
+    }
+
     html += `<tr>
       <td>${b.ItemID}</td>
       <td>${b.KodeItem || '-'}</td>
@@ -193,10 +216,7 @@ function loadListBarang() {
       <td>${b.Kategori}</td>
       <td>${b.Satuan}</td>
       <td>${b.StokMinimum}</td>
-      <td>
-        <button onclick="editBarang('${b.ItemID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapus('${b.ItemID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      </td>
+      <td>${tombolAksi}</td>
     </tr>`; 
   });
   document.getElementById('listBarang').innerHTML = `<table><thead><tr><th>ID</th><th>Kode Item</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Min</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
@@ -205,17 +225,24 @@ function loadListBarang() {
 function loadListUnit() {
   if(!document.getElementById('listUnit')) return;
   let html = '';
+  const isHO = currentUser && currentUser.role === 'HO';
+
   masterUnit.forEach(u => { 
+    let tombolAksi = '-';
+    if (isHO) {
+      tombolAksi = `
+        <button onclick="editUnit('${u.UnitID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapusUnit('${u.UnitID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      `;
+    }
+
     html += `<tr>
       <td>${u.IDUnit}</td>
       <td>${u.JenisAlat}</td>
       <td>${u.SerialNumber}</td>
       <td>${u.Project}</td>
       <td>${u.StatusUnit}</td>
-      <td>
-        <button onclick="editUnit('${u.UnitID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapusUnit('${u.UnitID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      </td>
+      <td>${tombolAksi}</td>
     </tr>`; 
   });
   document.getElementById('listUnit').innerHTML = `<table><thead><tr><th>ID Unit</th><th>Jenis</th><th>Serial</th><th>Project</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
@@ -224,17 +251,24 @@ function loadListUnit() {
 function loadListSupplier() {
   if(!document.getElementById('listSupplier')) return;
   let html = '';
+  const isHO = currentUser && currentUser.role === 'HO';
+
   masterSupplier.forEach(s => { 
+    let tombolAksi = '-';
+    if (isHO) {
+      tombolAksi = `
+        <button onclick="editSupplier('${s.SupplierID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapusSupplier('${s.SupplierID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      `;
+    }
+
     html += `<tr>
       <td>${s.SupplierID}</td>
       <td>${s.NamaSupplier}</td>
       <td>${s.Alamat}</td>
       <td>${s.Kontak}</td>
       <td>${s.StatusAktif}</td>
-      <td>
-        <button onclick="editSupplier('${s.SupplierID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapusSupplier('${s.SupplierID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      </td>
+      <td>${tombolAksi}</td>
     </tr>`; 
   });
   document.getElementById('listSupplier').innerHTML = `<table><thead><tr><th>ID</th><th>Nama Supplier</th><th>Alamat</th><th>Kontak</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
@@ -243,17 +277,24 @@ function loadListSupplier() {
 function loadListProject() {
   if(!document.getElementById('listProject')) return;
   let html = '';
+  const isHO = currentUser && currentUser.role === 'HO';
+
   masterProject.forEach(p => { 
+    let tombolAksi = '-';
+    if (isHO) {
+      tombolAksi = `
+        <button onclick="editProject('${p.ProjectID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapusProject('${p.ProjectID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      `;
+    }
+
     html += `<tr>
       <td>${p.ProjectID}</td>
       <td>${p.NamaProject}</td>
       <td>${p.Lokasi}</td>
       <td>${p.Keterangan || '-'}</td>
       <td>${p.StatusAktif}</td>
-      <td>
-        <button onclick="editProject('${p.ProjectID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapusProject('${p.ProjectID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      </td>
+      <td>${tombolAksi}</td>
     </tr>`; 
   });
   document.getElementById('listProject').innerHTML = `<table><thead><tr><th>ID</th><th>Nama Project</th><th>Lokasi</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
@@ -438,7 +479,7 @@ async function loadKartu() {
       tanggalCetakStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
     }
 
-       // Ambil nama pembuat & penyetuju dari input (jika kosong, pakai nama default / nama login)
+    // Ambil nama pembuat & penyetuju dari input
     const inputMembuat = document.getElementById('inputNamaMembuat').value;
     const currentUserName = inputMembuat ? inputMembuat : (currentUser ? currentUser.nama : 'Admin');
     const inputMenyetujui = document.getElementById('inputNamaMenyetujui').value || 'Dodi Saputra Sahupala';
@@ -480,7 +521,7 @@ async function loadKartu() {
       <div style="margin-top: 20px; font-size: 14px;">
         ${inputLokasi}, ${tanggalCetakStr}
       </div>
-           <div class="laporan-ttd">
+      <div class="laporan-ttd">
         <div class="ttd-box"><p>Yang Membuat,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${currentUserName}</p></div>
         <div class="ttd-box"><p>Yang Menyetujui,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${inputMenyetujui}</p></div>
       </div>
@@ -549,6 +590,7 @@ async function loadLaporanUnit() {
     }
   } catch (err) { container.innerHTML = '<p class="error">Error memuat laporan.</p>'; }
 }
+
 // ============================================
 // LAPORAN PROJECT
 // ============================================
@@ -1087,22 +1129,6 @@ async function submitTambahProject(e) {
 // ============================================
 // NAVIGASI & AUTO LOGIN
 // ============================================
-function applyRolePermissions() {
-  // Jika yang login BUKAN HO, sembunyikan menu Master
-  if (currentUser && currentUser.role !== 'HO') {
-    const menuMaster = document.getElementById('menuMaster');
-    if (menuMaster) menuMaster.style.display = 'none';
-    
-    // Jika sedang berada di halaman master (karena sisa session), lempar ke dashboard
-    if (document.getElementById('page-barang').classList.contains('hidden') === false ||
-        document.getElementById('page-project').classList.contains('hidden') === false ||
-        document.getElementById('page-supplier').classList.contains('hidden') === false ||
-        document.getElementById('page-unit').classList.contains('hidden') === false) {
-      showPage('dashboard');
-    }
-  }
-}
-
 function showPage(page) {
   document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
@@ -1125,39 +1151,43 @@ function showPage(page) {
     if(!document.getElementById('inputTanggalCetak').value) {
       document.getElementById('inputTanggalCetak').value = new Date().toISOString().split('T')[0];
     }
-    // Auto-fill nama pembuat dengan nama user login jika masih kosong
+    // Auto-fill nama pembuat
     if(document.getElementById('inputNamaMembuat') && !document.getElementById('inputNamaMembuat').value) {
       document.getElementById('inputNamaMembuat').value = currentUser ? currentUser.nama : 'Admin';
     }
   }
-}
-if (page === 'laporanProject') {
-  const now = new Date();
-  // Default mode: bulanan, bulan ini
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const bulanIni = `${yyyy}-${mm}`;
-  if (document.getElementById('filterBulananProject') && !document.getElementById('filterBulananProject').value) {
-    document.getElementById('filterBulananProject').value = bulanIni;
+
+  if (page === 'laporanProject') {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const bulanIni = `${yyyy}-${mm}`;
+    if (document.getElementById('filterBulananProject') && !document.getElementById('filterBulananProject').value) {
+      document.getElementById('filterBulananProject').value = bulanIni;
+    }
+    if (document.getElementById('filterHarianProject') && !document.getElementById('filterHarianProject').value) {
+      document.getElementById('filterHarianProject').value = now.toISOString().split('T')[0];
+    }
+    toggleModeFilterProject();
   }
-  if (document.getElementById('filterHarianProject') && !document.getElementById('filterHarianProject').value) {
-    document.getElementById('filterHarianProject').value = now.toISOString().split('T')[0];
-  }
-  toggleModeFilterProject();
 }
+
 function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
-window.addEventListener('DOMContentLoaded', async () => {
-  const saved = localStorage.getItem('user');
-  if (saved) {
-    currentUser = JSON.parse(saved);
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('mainApp').classList.remove('hidden');
-    document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
-    await loadInitialData();
+// Auto-fill lokasi saat project dipilih di form Barang Keluar
+document.addEventListener('DOMContentLoaded', () => {
+  const projSelect = document.getElementById('keluarProject');
+  if (projSelect) {
+    projSelect.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const lokasi = opt ? opt.getAttribute('data-lokasi') : '';
+      const lokSel = document.getElementById('keluarLokasi');
+      if (lokSel && lokasi && lokasi !== '-') lokSel.value = lokasi;
+    });
   }
 });
 
+// EVENT LISTENER UTAMA (AUTO LOGIN)
 window.addEventListener('DOMContentLoaded', async () => {
   const saved = localStorage.getItem('user');
   if (saved) {
@@ -1165,7 +1195,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
     document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
-    applyRolePermissions(); // <--- TAMBAHKAN INI
+    applyRolePermissions();
     await loadInitialData();
   }
 });
