@@ -63,16 +63,16 @@ function doLogout() {
 function applyRolePermissions() {
   if (!currentUser) return;
 
-  // Ubah role ke huruf kecil untuk mempermudah pengecekan (anti typo besar/kecil)
+  // Ubah ke huruf kecil untuk mempermudah pengecekan
   const role = String(currentUser.role).toLowerCase().trim();
-  
-  // Sembunyikan menu Master HANYA JIKA role-nya adalah 'admin site'
   const menuMaster = document.getElementById('menuMaster');
+  
   if (menuMaster) {
+    // HANYA sembunyikan jika role-nya PERSIS 'admin site'
     if (role === 'admin site') {
       menuMaster.style.display = 'none';
     } else {
-      menuMaster.style.display = 'block'; // Munculkan untuk HO atau role lain
+      menuMaster.style.display = 'inline-block'; // Kembalikan ke inline-block agar sejajar
     }
   }
   
@@ -205,12 +205,12 @@ function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
   
-  // Cek Role
-  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  // Cek Role (Hanya 'admin site' yang tidak boleh edit)
+  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterBarang.forEach(b => { 
     let tombolAksi = '-';
-    if (isHO) {
+    if (canEdit) {
       tombolAksi = `
         <button onclick="editBarang('${b.ItemID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
         <button onclick="konfirmasiHapus('${b.ItemID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
@@ -233,11 +233,11 @@ function loadListBarang() {
 function loadListUnit() {
   if(!document.getElementById('listUnit')) return;
   let html = '';
-  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterUnit.forEach(u => { 
     let tombolAksi = '-';
-    if (isHO) {
+    if (canEdit) {
       tombolAksi = `
         <button onclick="editUnit('${u.UnitID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
         <button onclick="konfirmasiHapusUnit('${u.UnitID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
@@ -259,11 +259,11 @@ function loadListUnit() {
 function loadListSupplier() {
   if(!document.getElementById('listSupplier')) return;
   let html = '';
-  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterSupplier.forEach(s => { 
     let tombolAksi = '-';
-    if (isHO) {
+    if (canEdit) {
       tombolAksi = `
         <button onclick="editSupplier('${s.SupplierID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
         <button onclick="konfirmasiHapusSupplier('${s.SupplierID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
@@ -285,11 +285,11 @@ function loadListSupplier() {
 function loadListProject() {
   if(!document.getElementById('listProject')) return;
   let html = '';
-  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterProject.forEach(p => { 
     let tombolAksi = '-';
-    if (isHO) {
+    if (canEdit) {
       tombolAksi = `
         <button onclick="editProject('${p.ProjectID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
         <button onclick="konfirmasiHapusProject('${p.ProjectID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
