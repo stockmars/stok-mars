@@ -63,28 +63,12 @@ function doLogout() {
 function applyRolePermissions() {
   if (!currentUser) return;
 
-  // Ubah ke huruf kecil untuk mempermudah pengecekan
   const role = String(currentUser.role).toLowerCase().trim();
   const menuMaster = document.getElementById('menuMaster');
   
+  // SEMUA role sekarang bisa melihat menu Master
   if (menuMaster) {
-    // HANYA sembunyikan jika role-nya PERSIS 'admin site'
-    if (role === 'admin site') {
-      menuMaster.style.display = 'none';
-    } else {
-      menuMaster.style.display = 'inline-block'; // Kembalikan ke inline-block agar sejajar
-    }
-  }
-  
-  // Jika yang login adalah admin site TAPI sedang berada di halaman master, tendang ke dashboard
-  if (role === 'admin site') {
-    const isMasterPage = ['page-barang', 'page-unit', 'page-supplier', 'page-project'].some(id => {
-      const el = document.getElementById(id);
-      return el && !el.classList.contains('hidden');
-    });
-    if (isMasterPage) {
-      showPage('dashboard');
-    }
+    menuMaster.style.display = 'inline-block'; 
   }
 }
 
@@ -205,17 +189,15 @@ function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
   
-  // Cek Role (Hanya 'admin site' yang tidak boleh edit)
-  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  // Cek apakah yang login Admin Site (tidak boleh hapus)
+  const isAdminSite = currentUser && String(currentUser.role).toLowerCase().trim() === 'admin site';
 
   masterBarang.forEach(b => { 
-    let tombolAksi = '-';
-    if (canEdit) {
-      tombolAksi = `
-        <button onclick="editBarang('${b.ItemID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapus('${b.ItemID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      `;
-    }
+    let tombolHapus = isAdminSite ? '' : `<button onclick="konfirmasiHapus('${b.ItemID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>`;
+    let tombolAksi = `
+      <button onclick="editBarang('${b.ItemID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+      ${tombolHapus}
+    `;
 
     html += `<tr>
       <td>${b.ItemID}</td>
@@ -233,16 +215,14 @@ function loadListBarang() {
 function loadListUnit() {
   if(!document.getElementById('listUnit')) return;
   let html = '';
-  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  const isAdminSite = currentUser && String(currentUser.role).toLowerCase().trim() === 'admin site';
 
   masterUnit.forEach(u => { 
-    let tombolAksi = '-';
-    if (canEdit) {
-      tombolAksi = `
-        <button onclick="editUnit('${u.UnitID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapusUnit('${u.UnitID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      `;
-    }
+    let tombolHapus = isAdminSite ? '' : `<button onclick="konfirmasiHapusUnit('${u.UnitID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>`;
+    let tombolAksi = `
+      <button onclick="editUnit('${u.UnitID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+      ${tombolHapus}
+    `;
 
     html += `<tr>
       <td>${u.IDUnit}</td>
@@ -259,16 +239,14 @@ function loadListUnit() {
 function loadListSupplier() {
   if(!document.getElementById('listSupplier')) return;
   let html = '';
-  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  const isAdminSite = currentUser && String(currentUser.role).toLowerCase().trim() === 'admin site';
 
   masterSupplier.forEach(s => { 
-    let tombolAksi = '-';
-    if (canEdit) {
-      tombolAksi = `
-        <button onclick="editSupplier('${s.SupplierID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapusSupplier('${s.SupplierID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      `;
-    }
+    let tombolHapus = isAdminSite ? '' : `<button onclick="konfirmasiHapusSupplier('${s.SupplierID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>`;
+    let tombolAksi = `
+      <button onclick="editSupplier('${s.SupplierID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+      ${tombolHapus}
+    `;
 
     html += `<tr>
       <td>${s.SupplierID}</td>
@@ -285,16 +263,14 @@ function loadListSupplier() {
 function loadListProject() {
   if(!document.getElementById('listProject')) return;
   let html = '';
-  const canEdit = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
+  const isAdminSite = currentUser && String(currentUser.role).toLowerCase().trim() === 'admin site';
 
   masterProject.forEach(p => { 
-    let tombolAksi = '-';
-    if (canEdit) {
-      tombolAksi = `
-        <button onclick="editProject('${p.ProjectID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
-        <button onclick="konfirmasiHapusProject('${p.ProjectID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
-      `;
-    }
+    let tombolHapus = isAdminSite ? '' : `<button onclick="konfirmasiHapusProject('${p.ProjectID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>`;
+    let tombolAksi = `
+      <button onclick="editProject('${p.ProjectID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+      ${tombolHapus}
+    `;
 
     html += `<tr>
       <td>${p.ProjectID}</td>
