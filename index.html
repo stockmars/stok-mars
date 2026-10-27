@@ -112,6 +112,7 @@
 
         <button onclick="showPage('masuk')">Barang Masuk</button>
         <button onclick="showPage('keluar')">Barang Keluar</button>
+        <button onclick="showPage('riwayat')">Riwayat Transaksi</button>
         <button onclick="showPage('kartu')">Kartu Stok</button>
         <button onclick="showPage('laporanUnit')">Penggunaan per Unit</button>
         <button onclick="showPage('laporanProject')">Penggunaan per Project</button>
@@ -213,6 +214,13 @@
             <button type="submit">SIMPAN</button>
           </form>
           <p id="keluarMessage"></p>
+        </div>
+                <!-- Riwayat Transaksi -->
+        <div id="page-riwayat" class="content hidden">
+          <h3>Riwayat Transaksi (30 Terakhir)</h3>
+          <p style="margin-bottom:16px;color:#666;">Jika ada salah input barang masuk/keluar, kamu bisa membatalkan (hapus) transaksi di bawah ini. Saldo stok akan otomatis menyesuaikan.</p>
+          
+          <div id="listRiwayat"></div>
         </div>
 
         <!-- Kartu Stok -->
