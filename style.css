@@ -81,3 +81,10 @@ tr:hover { background: #f8f9fa; }
     print-color-adjust: exact;
   }
 }
+/* Dropdown Menu */
+.dropdown:hover .dropdown-content {
+  display: block !important;
+}
+.dropdown-content button:hover {
+  background-color: #f1f1f1 !important;
+}
