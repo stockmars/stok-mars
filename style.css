@@ -55,18 +55,11 @@ tr:hover { background: #f8f9fa; }
   body * { visibility: hidden; }
   
   /* Hanya tampilkan area laporan (kartuContent) */
-  #kartuContent, #kartuContent * { visibility: visible; }
-  
-  /* Posisikan laporan di pojok kiri atas kertas */
-  #kartuContent {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-  }
+  #kartuContent, #kartuContent *,
+#laporanProjectContent, #laporanProjectContent * { visibility: visible; }
+#kartuContent, #laporanProjectContent {
+  position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; box-shadow: none;
+}
   
   /* Atur kertas menjadi Landscape (Mendatar) */
   @page {
