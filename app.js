@@ -1211,6 +1211,9 @@ function showPage(page) {
   }
 
   if (page === 'laporanProject') {
+      if (page === 'riwayat') {
+    loadRiwayat();
+  }
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
