@@ -4,6 +4,24 @@ let currentUser = null;
 let masterBarang = [];
 let masterUnit = [];
 let masterSupplier = [];
+let masterProject = [];
+
+// ============================================
+// DROPDOWN TOGGLE
+// ============================================
+function toggleDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('masterDropdown');
+  if (dd) dd.classList.toggle('show');
+}
+function closeDropdown() {
+  const dd = document.getElementById('masterDropdown');
+  if (dd) dd.classList.remove('show');
+}
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('masterDropdown');
+  if (dd && !e.target.closest('.dropdown')) dd.classList.remove('show');
+});
 
 // ============================================
 // LOGIN & LOGOUT
@@ -37,23 +55,27 @@ function doLogout() {
 // ============================================
 async function loadInitialData() {
   try {
-    const [resBarang, resUnit, resSupplier] = await Promise.all([
+    const [resBarang, resUnit, resSupplier, resProject] = await Promise.all([
       fetch(API_URL + '?action=getMasterBarang'),
       fetch(API_URL + '?action=getMasterUnit'),
-      fetch(API_URL + '?action=getMasterSupplier')
+      fetch(API_URL + '?action=getMasterSupplier'),
+      fetch(API_URL + '?action=getMasterProject')
     ]);
     const jsonBarang = await resBarang.json();
     const jsonUnit = await resUnit.json();
     const jsonSupplier = await resSupplier.json();
+    const jsonProject = await resProject.json();
     
     if (jsonBarang.success) masterBarang = jsonBarang.data;
     if (jsonUnit.success) masterUnit = jsonUnit.data;
     if (jsonSupplier.success) masterSupplier = jsonSupplier.data;
+    if (jsonProject.success) masterProject = jsonProject.data;
 
     fillDropdowns();
     loadListBarang();
     loadListUnit();
     loadListSupplier();
+    loadListProject();
     loadDashboard();
   } catch (error) { 
     console.error("Gagal load data", error); 
@@ -61,21 +83,20 @@ async function loadInitialData() {
 }
 
 // ============================================
-// TAMPILAN
+// TAMPILAN & DROPDOWN
 // ============================================
 function fillDropdowns() {
-  // 1. Isi Datalist untuk form Barang Masuk & Keluar (Fitur Pencarian)
+  // 1. Datalist barang masuk & keluar
   let optDatalist = '';
   masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
     const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
     optDatalist += `<option value="${b.ItemID} - ${b.NamaBarang} ${kode}${merek}"></option>`; 
   });
-  
   if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optDatalist;
   if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optDatalist;
 
-  // 2. Isi Dropdown Select untuk Kartu Stok
+  // 2. Dropdown Kartu Stok
   let optSelect = '<option value="">-- Pilih Barang --</option>';
   masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
@@ -84,22 +105,56 @@ function fillDropdowns() {
   });
   if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optSelect;
 
-  // 3. Isi Dropdown Unit
+  // 3. Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
   masterUnit.forEach(u => { optUnit += `<option value="${u.IDUnit}">${u.IDUnit} - ${u.SerialNumber}</option>`; });
   if(document.getElementById('keluarUnit')) document.getElementById('keluarUnit').innerHTML = optUnit;
   if(document.getElementById('filterUnit')) document.getElementById('filterUnit').innerHTML = '<option value="">Semua Unit</option>' + optUnit;
   
-  // 4. Isi Dropdown Supplier
+  // 4. Dropdown Supplier
   let optSupplier = '<option value="">-- Pilih Supplier --</option>';
   masterSupplier.forEach(s => { optSupplier += `<option value="${s.NamaSupplier}">${s.NamaSupplier}</option>`; });
   if(document.getElementById('masukSupplier')) document.getElementById('masukSupplier').innerHTML = optSupplier;
 
-  // 5. Set Tanggal Hari Ini
+  // 5. Dropdown Project & Lokasi (dari MASTER_PROJECT)
+  let optProject = '<option value="">-- Pilih Project --</option>';
+  masterProject.forEach(p => { optProject += `<option value="${p.NamaProject}" data-lokasi="${p.Lokasi || ''}">${p.NamaProject}</option>`; });
+  if(document.getElementById('keluarProject')) {
+    const sel = document.getElementById('keluarProject');
+    const current = sel.value;
+    sel.innerHTML = optProject;
+    if (current) sel.value = current;
+  }
+
+  let optLokasi = '<option value="">-- Pilih Lokasi --</option>';
+  masterProject.forEach(p => { 
+    if (p.Lokasi && p.Lokasi !== '-') optLokasi += `<option value="${p.Lokasi}">${p.Lokasi}</option>`; 
+  });
+  if(document.getElementById('keluarLokasi')) {
+    const sel = document.getElementById('keluarLokasi');
+    const current = sel.value;
+    sel.innerHTML = optLokasi;
+    if (current) sel.value = current;
+  }
+
+  // 6. Set Tanggal Hari Ini
   const today = new Date().toISOString().split('T')[0];
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
 }
+
+// Auto-fill lokasi saat project dipilih (dipasang sekali)
+document.addEventListener('DOMContentLoaded', () => {
+  const projSelect = document.getElementById('keluarProject');
+  if (projSelect) {
+    projSelect.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const lokasi = opt ? opt.getAttribute('data-lokasi') : '';
+      const lokSel = document.getElementById('keluarLokasi');
+      if (lokSel && lokasi && lokasi !== '-') lokSel.value = lokasi;
+    });
+  }
+});
 
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
@@ -157,6 +212,25 @@ function loadListSupplier() {
     </tr>`; 
   });
   document.getElementById('listSupplier').innerHTML = `<table><thead><tr><th>ID</th><th>Nama Supplier</th><th>Alamat</th><th>Kontak</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
+}
+
+function loadListProject() {
+  if(!document.getElementById('listProject')) return;
+  let html = '';
+  masterProject.forEach(p => { 
+    html += `<tr>
+      <td>${p.ProjectID}</td>
+      <td>${p.NamaProject}</td>
+      <td>${p.Lokasi}</td>
+      <td>${p.Keterangan || '-'}</td>
+      <td>${p.StatusAktif}</td>
+      <td>
+        <button onclick="editProject('${p.ProjectID}')" style="background:orange; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+        <button onclick="konfirmasiHapusProject('${p.ProjectID}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>
+      </td>
+    </tr>`; 
+  });
+  document.getElementById('listProject').innerHTML = `<table><thead><tr><th>ID</th><th>Nama Project</th><th>Lokasi</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${html}</tbody></table>`;
 }
 
 function filterBarang() {
@@ -688,6 +762,82 @@ async function submitTambahSupplier(e) {
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
       await loadInitialData(); 
       setTimeout(() => { tutupFormSupplier(); msg.textContent = ''; }, 1500); 
+    }
+    else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
+  } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
+}
+
+// ============================================
+// CRUD PROJECT
+// ============================================
+function bukaFormProject() {
+  document.getElementById('judulFormProject').textContent = 'Tambah Project Baru';
+  document.getElementById('baruProjectID').value = ''; 
+  document.getElementById('baruNamaProject').value = '';
+  document.getElementById('baruLokasiProject').value = '';
+  document.getElementById('baruKeteranganProject').value = '';
+  document.getElementById('formTambahProject').classList.remove('hidden'); 
+  document.getElementById('msgTambahProject').textContent = '';
+}
+
+function editProject(projectId) {
+  const proj = masterProject.find(p => p.ProjectID === projectId);
+  if(!proj) return;
+  
+  document.getElementById('judulFormProject').textContent = 'Edit Project: ' + proj.NamaProject;
+  document.getElementById('baruProjectID').value = proj.ProjectID;
+  document.getElementById('baruNamaProject').value = proj.NamaProject;
+  document.getElementById('baruLokasiProject').value = proj.Lokasi !== '-' ? proj.Lokasi : '';
+  document.getElementById('baruKeteranganProject').value = proj.Keterangan !== '-' ? proj.Keterangan : '';
+  
+  document.getElementById('formTambahProject').classList.remove('hidden'); 
+  document.getElementById('msgTambahProject').textContent = '';
+}
+
+function konfirmasiHapusProject(projectId) {
+  if(confirm('Apakah Anda yakin ingin menghapus project ini?')) {
+    hapusProjectData(projectId);
+  }
+}
+
+async function hapusProjectData(projectId) {
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusProject', data: { projectId } }) });
+    const result = await res.json();
+    if(result.success) {
+      alert(result.message);
+      await loadInitialData(); 
+    } else { alert('Gagal: ' + result.message); }
+  } catch(err) { alert('Error: ' + err.message); }
+}
+
+function tutupFormProject() { 
+  document.getElementById('formTambahProject').classList.add('hidden'); 
+}
+
+async function submitTambahProject(e) {
+  e.preventDefault();
+  const msg = document.getElementById('msgTambahProject');
+  msg.textContent = 'Menyimpan...';
+  msg.className = '';
+  
+  const projectId = document.getElementById('baruProjectID').value;
+  const actionType = projectId ? 'updateProject' : 'tambahProject';
+  
+  const data = { 
+    projectId: projectId,
+    namaProject: document.getElementById('baruNamaProject').value, 
+    lokasi: document.getElementById('baruLokasiProject').value, 
+    keterangan: document.getElementById('baruKeteranganProject').value 
+  };
+  
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
+    const result = await res.json();
+    if (result.success) { 
+      msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
+      await loadInitialData(); 
+      setTimeout(() => { tutupFormProject(); msg.textContent = ''; }, 1500); 
     }
     else { msg.textContent = '✗ ' + result.message; msg.className = 'error'; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; msg.className = 'error'; }
