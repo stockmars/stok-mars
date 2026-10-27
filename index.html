@@ -54,8 +54,11 @@
     .ttd-space { height: 80px; }
     @media print {
       body * { visibility: hidden; }
-      #kartuContent, #kartuContent * { visibility: visible; }
-      #kartuContent { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; box-shadow: none; }
+      #kartuContent, #kartuContent *,
+      #laporanProjectContent, #laporanProjectContent * { visibility: visible; }
+      #kartuContent, #laporanProjectContent {
+        position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; box-shadow: none;
+      }
       @page { size: A4 landscape; margin: 15mm; }
       .laporan-table th, .laporan-table td { border: 1px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
@@ -233,21 +236,18 @@
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Lokasi Laporan:</label>
               <input type="text" id="inputLokasiCetak" placeholder="Contoh: NPM Matarape" value="NPM Matarape" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 180px;">
             </div>
-                        <div>
+            <div>
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Tanggal Laporan:</label>
               <input type="date" id="inputTanggalCetak" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
             </div>
-
-            <!-- TAMBAHAN INPUT NAMA TTD -->
             <div>
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Yang Membuat:</label>
               <input type="text" id="inputNamaMembuat" placeholder="Nama Pembuat" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 150px;">
             </div>
             <div>
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Yang Menyetujui:</label>
-              <input type="text" id="inputNamaMenyetujui" placeholder="Nama PenyETUJU" value="Dodi Saputra Sahupala" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 180px;">
+              <input type="text" id="inputNamaMenyetujui" placeholder="Nama Penyetuju" value="Dodi Saputra Sahupala" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 180px;">
             </div>
-            
             <button onclick="loadKartu()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Tampilkan</button>
             <button onclick="cetakLaporan()" style="padding: 10px 16px; background: #4caf50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🖨️ Cetak Laporan</button>
           </div>
@@ -365,58 +365,56 @@
           </div>
           <div id="listLaporanUnit"></div>
         </div>
+
         <!-- Laporan Project -->
-<div id="page-laporanProject" class="content hidden">
-  <h3>Total Penggunaan Part per Project</h3>
-  <p style="margin-bottom:16px;color:#666;">Rekap penggunaan part (barang keluar) per unit di setiap project, dengan filter periode.</p>
-
-  <!-- Filter -->
-  <div style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: end;">
-      <div>
-        <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Project</label>
-        <select id="filterProjectSelect" style="padding:8px; border:1px solid #ddd; border-radius:8px; min-width:200px;">
-          <option value="">Semua Project</option>
-        </select>
-      </div>
-      <div>
-        <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Mode Periode</label>
-        <select id="filterModeProject" onchange="toggleModeFilterProject()" style="padding:8px; border:1px solid #ddd; border-radius:8px; min-width:150px;">
-          <option value="harian">Per Hari</option>
-          <option value="bulanan" selected>Per Bulan</option>
-          <option value="tahunan">Per Tahun</option>
-          <option value="range">Rentang Tanggal</option>
-        </select>
-      </div>
-      <div id="wrapHarian" class="hidden">
-        <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Tanggal</label>
-        <input type="date" id="filterHarianProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
-      </div>
-      <div id="wrapBulanan">
-        <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Bulan</label>
-        <input type="month" id="filterBulananProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
-      </div>
-      <div id="wrapTahunan" class="hidden">
-        <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Tahun</label>
-        <select id="filterTahunanProject" style="padding:8px; border:1px solid #ddd; border-radius:8px; min-width:100px;"></select>
-      </div>
-      <div id="wrapRangeAwal" class="hidden">
-        <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Dari Tanggal</label>
-        <input type="date" id="filterRangeAwalProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
-      </div>
-      <div id="wrapRangeAkhir" class="hidden">
-        <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Sampai Tanggal</label>
-        <input type="date" id="filterRangeAkhirProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
-      </div>
-      <button onclick="loadLaporanProject()" style="padding:10px 16px; background:#1a73e8; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Tampilkan</button>
-      <button onclick="cetakLaporanProject()" style="padding:10px 16px; background:#4caf50; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">🖨️ Cetak</button>
-    </div>
-  </div>
-
-  <div id="laporanProjectContent" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); overflow-x: auto;">
-    <p style="text-align: center; color: #666;">Pilih filter lalu klik Tampilkan.</p>
-  </div>
-</div>
+        <div id="page-laporanProject" class="content hidden">
+          <h3>Total Penggunaan Part per Project</h3>
+          <p style="margin-bottom:16px;color:#666;">Rekap penggunaan part (barang keluar) per unit di setiap project, dengan filter periode.</p>
+          <div style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: end;">
+              <div>
+                <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Project</label>
+                <select id="filterProjectSelect" style="padding:8px; border:1px solid #ddd; border-radius:8px; min-width:200px;">
+                  <option value="">Semua Project</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Mode Periode</label>
+                <select id="filterModeProject" onchange="toggleModeFilterProject()" style="padding:8px; border:1px solid #ddd; border-radius:8px; min-width:150px;">
+                  <option value="harian">Per Hari</option>
+                  <option value="bulanan" selected>Per Bulan</option>
+                  <option value="tahunan">Per Tahun</option>
+                  <option value="range">Rentang Tanggal</option>
+                </select>
+              </div>
+              <div id="wrapHarian" class="hidden">
+                <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Tanggal</label>
+                <input type="date" id="filterHarianProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
+              </div>
+              <div id="wrapBulanan">
+                <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Bulan</label>
+                <input type="month" id="filterBulananProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
+              </div>
+              <div id="wrapTahunan" class="hidden">
+                <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Tahun</label>
+                <select id="filterTahunanProject" style="padding:8px; border:1px solid #ddd; border-radius:8px; min-width:100px;"></select>
+              </div>
+              <div id="wrapRangeAwal" class="hidden">
+                <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Dari Tanggal</label>
+                <input type="date" id="filterRangeAwalProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
+              </div>
+              <div id="wrapRangeAkhir" class="hidden">
+                <label style="display:block; font-size:12px; color:#666; margin-bottom:4px;">Sampai Tanggal</label>
+                <input type="date" id="filterRangeAkhirProject" style="padding:8px; border:1px solid #ddd; border-radius:8px;">
+              </div>
+              <button onclick="loadLaporanProject()" style="padding:10px 16px; background:#1a73e8; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Tampilkan</button>
+              <button onclick="cetakLaporanProject()" style="padding:10px 16px; background:#4caf50; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">🖨️ Cetak</button>
+            </div>
+          </div>
+          <div id="laporanProjectContent" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); overflow-x: auto;">
+            <p style="text-align: center; color: #666;">Pilih filter lalu klik Tampilkan.</p>
+          </div>
+        </div>
       </main>
     </div>
   </div>
