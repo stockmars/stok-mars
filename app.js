@@ -28,11 +28,17 @@ document.addEventListener('click', function(e) {
 // ============================================
 async function doLogin() {
   const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
   const msg = document.getElementById('loginMessage');
-  if (!email) { msg.textContent = 'Email wajib diisi'; return; }
+  
+  if (!email || !password) { msg.textContent = 'Email dan Password wajib diisi'; return; }
   msg.textContent = 'Memproses...';
+  
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'login', data: { email } }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'login', data: { email, password } }) 
+    });
     const result = await res.json();
     if (result.success) {
       currentUser = result.user;
@@ -40,6 +46,7 @@ async function doLogin() {
       document.getElementById('loginPage').classList.add('hidden');
       document.getElementById('mainApp').classList.remove('hidden');
       document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
+      applyRolePermissions(); // Panggil fungsi pembatas akses
       await loadInitialData();
     } else { msg.textContent = result.message; }
   } catch (err) { msg.textContent = 'Error: ' + err.message; }
@@ -1080,6 +1087,22 @@ async function submitTambahProject(e) {
 // ============================================
 // NAVIGASI & AUTO LOGIN
 // ============================================
+function applyRolePermissions() {
+  // Jika yang login BUKAN HO, sembunyikan menu Master
+  if (currentUser && currentUser.role !== 'HO') {
+    const menuMaster = document.getElementById('menuMaster');
+    if (menuMaster) menuMaster.style.display = 'none';
+    
+    // Jika sedang berada di halaman master (karena sisa session), lempar ke dashboard
+    if (document.getElementById('page-barang').classList.contains('hidden') === false ||
+        document.getElementById('page-project').classList.contains('hidden') === false ||
+        document.getElementById('page-supplier').classList.contains('hidden') === false ||
+        document.getElementById('page-unit').classList.contains('hidden') === false) {
+      showPage('dashboard');
+    }
+  }
+}
+
 function showPage(page) {
   document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
@@ -1131,6 +1154,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
     document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
+    await loadInitialData();
+  }
+});
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const saved = localStorage.getItem('user');
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
+    applyRolePermissions(); // <--- TAMBAHKAN INI
     await loadInitialData();
   }
 });
