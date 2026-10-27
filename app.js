@@ -61,12 +61,23 @@ function doLogout() {
 // HAK AKSES BERDASARKAN ROLE
 // ============================================
 function applyRolePermissions() {
-  // Sembunyikan menu Master jika yang login BUKAN HO
-  if (currentUser && currentUser.role !== 'HO') {
-    const menuMaster = document.getElementById('menuMaster');
-    if (menuMaster) menuMaster.style.display = 'none';
-    
-    // Jika sedang berada di halaman master, tendang ke dashboard
+  if (!currentUser) return;
+
+  // Ubah role ke huruf kecil untuk mempermudah pengecekan (anti typo besar/kecil)
+  const role = String(currentUser.role).toLowerCase().trim();
+  
+  // Sembunyikan menu Master HANYA JIKA role-nya adalah 'admin site'
+  const menuMaster = document.getElementById('menuMaster');
+  if (menuMaster) {
+    if (role === 'admin site') {
+      menuMaster.style.display = 'none';
+    } else {
+      menuMaster.style.display = 'block'; // Munculkan untuk HO atau role lain
+    }
+  }
+  
+  // Jika yang login adalah admin site TAPI sedang berada di halaman master, tendang ke dashboard
+  if (role === 'admin site') {
     const isMasterPage = ['page-barang', 'page-unit', 'page-supplier', 'page-project'].some(id => {
       const el = document.getElementById(id);
       return el && !el.classList.contains('hidden');
@@ -74,9 +85,6 @@ function applyRolePermissions() {
     if (isMasterPage) {
       showPage('dashboard');
     }
-  } else {
-    const menuMaster = document.getElementById('menuMaster');
-    if (menuMaster) menuMaster.style.display = 'block'; // Atau inline-block
   }
 }
 
@@ -198,7 +206,7 @@ function loadListBarang() {
   let html = '';
   
   // Cek Role
-  const isHO = currentUser && currentUser.role === 'HO';
+  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterBarang.forEach(b => { 
     let tombolAksi = '-';
@@ -225,7 +233,7 @@ function loadListBarang() {
 function loadListUnit() {
   if(!document.getElementById('listUnit')) return;
   let html = '';
-  const isHO = currentUser && currentUser.role === 'HO';
+  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterUnit.forEach(u => { 
     let tombolAksi = '-';
@@ -251,7 +259,7 @@ function loadListUnit() {
 function loadListSupplier() {
   if(!document.getElementById('listSupplier')) return;
   let html = '';
-  const isHO = currentUser && currentUser.role === 'HO';
+  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterSupplier.forEach(s => { 
     let tombolAksi = '-';
@@ -277,7 +285,7 @@ function loadListSupplier() {
 function loadListProject() {
   if(!document.getElementById('listProject')) return;
   let html = '';
-  const isHO = currentUser && currentUser.role === 'HO';
+  const isHO = currentUser && String(currentUser.role).toLowerCase().trim() !== 'admin site';
 
   masterProject.forEach(p => { 
     let tombolAksi = '-';
@@ -479,7 +487,6 @@ async function loadKartu() {
       tanggalCetakStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
     }
 
-    // Ambil nama pembuat & penyetuju dari input
     const inputMembuat = document.getElementById('inputNamaMembuat').value;
     const currentUserName = inputMembuat ? inputMembuat : (currentUser ? currentUser.nama : 'Admin');
     const inputMenyetujui = document.getElementById('inputNamaMenyetujui').value || 'Dodi Saputra Sahupala';
@@ -683,14 +690,12 @@ async function loadLaporanProject() {
       return;
     }
 
-    // Group by project
     const groupedByProject = {};
     units.forEach(u => {
       if (!groupedByProject[u.project]) groupedByProject[u.project] = [];
       groupedByProject[u.project].push(u);
     });
 
-    // ==== RINGKASAN ATAS ====
     let html = `
       <div style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:10px;border-left:4px solid #1a73e8;">
         <h4 style="margin:0 0 12px 0;color:#1a73e8;">Ringkasan Laporan</h4>
@@ -723,7 +728,6 @@ async function loadLaporanProject() {
       </div>
     `;
 
-    // ==== DETAIL PER PROJECT ====
     Object.keys(groupedByProject).forEach(projName => {
       const unitsInProject = groupedByProject[projName];
       const lokasi = unitsInProject[0].lokasi || '-';
@@ -779,7 +783,6 @@ async function loadLaporanProject() {
       `;
     });
 
-    // ==== FOOTER TTD ====
     const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
     html += `
       <div style="margin-top:30px;font-size:14px;">Matarape, ${today}</div>
@@ -1151,7 +1154,6 @@ function showPage(page) {
     if(!document.getElementById('inputTanggalCetak').value) {
       document.getElementById('inputTanggalCetak').value = new Date().toISOString().split('T')[0];
     }
-    // Auto-fill nama pembuat
     if(document.getElementById('inputNamaMembuat') && !document.getElementById('inputNamaMembuat').value) {
       document.getElementById('inputNamaMembuat').value = currentUser ? currentUser.nama : 'Admin';
     }
@@ -1174,7 +1176,6 @@ function showPage(page) {
 
 function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
-// Auto-fill lokasi saat project dipilih di form Barang Keluar
 document.addEventListener('DOMContentLoaded', () => {
   const projSelect = document.getElementById('keluarProject');
   if (projSelect) {
@@ -1187,7 +1188,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// EVENT LISTENER UTAMA (AUTO LOGIN)
 window.addEventListener('DOMContentLoaded', async () => {
   const saved = localStorage.getItem('user');
   if (saved) {
