@@ -4,7 +4,72 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>STOK PART & SERVICE MARS</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+    .page { min-height: 100vh; }
+    .hidden { display: none !important; }
+    .login-box { max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .login-box h1 { font-size: 20px; text-align: center; margin-bottom: 8px; color: #1a73e8; }
+    .login-box p { text-align: center; color: #666; margin-bottom: 20px; }
+    .login-box input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    .login-box button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    .login-box button:hover { background: #1557b0; }
+    #loginMessage { margin-top: 12px; font-size: 13px; color: red; }
+    header { background: #1a73e8; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    header h2 { font-size: 18px; }
+    .user-info { display: flex; gap: 12px; align-items: center; font-size: 14px; }
+    .user-info button { padding: 6px 12px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 6px; cursor: pointer; }
+    nav { background: white; padding: 8px 16px; display: flex; gap: 8px; overflow-x: visible; border-bottom: 1px solid #ddd; flex-wrap: wrap; align-items: center; }
+    nav > button { padding: 10px 16px; background: transparent; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: bold; }
+    nav > button:hover { background: #f0f2f5; }
+    main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+    .content h3 { margin-bottom: 16px; color: #1a73e8; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .card h4 { font-size: 13px; color: #666; margin-bottom: 8px; }
+    .card p { font-size: 28px; font-weight: bold; color: #1a73e8; }
+    form { background: white; padding: 24px; border-radius: 12px; max-width: 500px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    form label { display: block; margin-bottom: 6px; font-size: 13px; color: #666; font-weight: 500; }
+    form input, form select { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    form button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    form button:hover { background: #1557b0; }
+    table { width: 100%; background: white; border-collapse: collapse; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { background: #f8f9fa; font-weight: 600; color: #555; }
+    tr:hover { background: #f8f9fa; }
+    #masukMessage, #keluarMessage { margin-top: 12px; font-size: 14px; }
+    .success { color: green; }
+    .error { color: red; }
+    @media (max-width: 600px) { main { padding: 16px; } header { padding: 12px 16px; } header h2 { font-size: 14px; } nav > button { font-size: 12px; padding: 8px 12px; } }
+    .laporan-header table { width: 100%; margin-bottom: 20px; font-size: 14px; }
+    .laporan-header td { padding: 4px; border: none; }
+    .laporan-title { text-align: center; font-size: 28px; font-weight: bold; margin: 20px 0; text-transform: uppercase; }
+    .laporan-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 30px; }
+    .laporan-table th, .laporan-table td { border: 1px solid #000; padding: 8px; text-align: center; }
+    .laporan-table th { background-color: #f0f0f0; }
+    .laporan-table td.text-left { text-align: left; }
+    .laporan-ttd { display: flex; justify-content: space-between; margin-top: 50px; font-size: 14px; }
+    .ttd-box { width: 30%; text-align: center; }
+    .ttd-space { height: 80px; }
+    @media print {
+      body * { visibility: hidden; }
+      #kartuContent, #kartuContent * { visibility: visible; }
+      #kartuContent { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; box-shadow: none; }
+      @page { size: A4 landscape; margin: 15mm; }
+      .laporan-table th, .laporan-table td { border: 1px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    /* Dropdown Menu (click toggle) */
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown > button { padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold; border-radius: 8px; }
+    .dropdown > button:hover { background: #f0f2f5; }
+    .dropdown-content { display: none; position: absolute; background-color: #fff; min-width: 180px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 999; border-radius: 8px; top: 100%; left: 0; }
+    .dropdown-content.show { display: block; }
+    .dropdown-content button { display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px; }
+    .dropdown-content button:hover { background-color: #f1f1f1; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+  </style>
 </head>
 <body>
   <div id="app">
@@ -29,23 +94,23 @@
           <button onclick="doLogout()">Logout</button>
         </div>
       </header>
-          <nav style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 16px; background: white; border-bottom: 1px solid #ddd;">
-        <button onclick="showPage('dashboard')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Dashboard</button>
+      <nav>
+        <button onclick="showPage('dashboard')">Dashboard</button>
         
-        <div class="dropdown" style="position: relative; display: inline-block;">
-          <button style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Master ▾</button>
-          <div class="dropdown-content" style="display: none; position: absolute; background-color: #f9f9f9; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 100; border-radius: 8px;">
-            <button onclick="showPage('barang')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Barang</button>
-            <button onclick="showPage('unit')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Unit</button>
-            <button onclick="showPage('supplier')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Supplier</button>
-            <button onclick="showPage('project')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Project</button>
+        <div class="dropdown">
+          <button onclick="toggleDropdown(event)">Master ▾</button>
+          <div id="masterDropdown" class="dropdown-content">
+            <button onclick="showPage('barang'); closeDropdown()">Master Barang</button>
+            <button onclick="showPage('unit'); closeDropdown()">Master Unit</button>
+            <button onclick="showPage('supplier'); closeDropdown()">Master Supplier</button>
+            <button onclick="showPage('project'); closeDropdown()">Master Project</button>
           </div>
         </div>
 
-        <button onclick="showPage('masuk')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Barang Masuk</button>
-        <button onclick="showPage('keluar')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Barang Keluar</button>
-        <button onclick="showPage('kartu')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Kartu Stok</button>
-        <button onclick="showPage('laporanUnit')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Penggunaan per Unit</button>
+        <button onclick="showPage('masuk')">Barang Masuk</button>
+        <button onclick="showPage('keluar')">Barang Keluar</button>
+        <button onclick="showPage('kartu')">Kartu Stok</button>
+        <button onclick="showPage('laporanUnit')">Penggunaan per Unit</button>
       </nav>
       <main>
         <!-- Dashboard -->
@@ -67,24 +132,18 @@
             <h3 style="margin: 0;">Master Barang</h3>
             <button onclick="bukaFormBarang()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Tambah Barang</button>
           </div>
-          
           <input type="text" id="searchBarang" placeholder="Cari barang..." onkeyup="filterBarang()" style="margin-bottom: 16px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 100%; max-width: 400px;">
-          
           <div id="listBarang"></div>
 
-          <!-- Form Tambah/Edit Barang (HANYA SATU) -->
-          <div id="formTambahBarang" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-            <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+          <div id="formTambahBarang" class="hidden modal-overlay">
+            <div class="modal-box">
               <h3 id="judulFormBarang" style="margin-top: 0; color: #1a73e8;">Tambah Barang Baru</h3>
               <form onsubmit="submitTambahBarang(event)">
                 <input type="hidden" id="baruItemID">
-                
                 <label>Nama Barang *</label>
                 <input type="text" id="baruNama" required>
-                
                 <label>Kode Item</label>
                 <input type="text" id="baruKode">
-                
                 <label>Kategori *</label>
                 <select id="baruKategori" required>
                   <option value="Filter">Filter</option>
@@ -94,7 +153,6 @@
                   <option value="Kawat Las">Kawat Las</option>
                   <option value="Lainnya">Lainnya</option>
                 </select>
-                
                 <label>Satuan *</label>
                 <select id="baruSatuan" required>
                   <option value="Pcs">Pcs</option>
@@ -103,13 +161,10 @@
                   <option value="Roll">Roll</option>
                   <option value="Set">Set</option>
                 </select>
-
                 <label>Merek</label>
                 <input type="text" id="baruMerek">
-
                 <label>Stok Minimum</label>
                 <input type="number" id="baruMin" value="0" min="0">
-                
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
                   <button type="button" onclick="tutupFormBarang()" style="background: #ccc; color: #333; width: 50%;">Batal</button>
                   <button type="submit" style="width: 50%;">Simpan</button>
@@ -120,18 +175,14 @@
           </div>
         </div>
 
-               <!-- Barang Masuk -->
+        <!-- Barang Masuk -->
         <div id="page-masuk" class="content hidden">
           <h3>Barang Masuk</h3>
           <form id="formMasuk" onsubmit="submitMasuk(event)">
             <label>Tanggal</label><input type="date" id="masukTanggal" required>
-            
-            <!-- GANTI BAGIAN INI -->
             <label>Cari & Pilih Barang *</label>
-            <input list="listBarangMasuk" id="masukBarangInput" placeholder="Ketik nama atau kode barang..." autocomplete="off" required style="width:100%; padding:10px; margin-bottom:16px; border: 1px solid #ddd; border-radius: 8px;">
+            <input list="listBarangMasuk" id="masukBarangInput" placeholder="Ketik nama atau kode barang..." autocomplete="off" required>
             <datalist id="listBarangMasuk"></datalist>
-            <input type="hidden" id="masukBarang">
-            
             <label>Jumlah</label><input type="number" id="masukQty" required min="1">
             <label>Supplier</label><select id="masukSupplier" required></select>
             <label>Keterangan</label><input type="text" id="masukKeterangan">
@@ -140,21 +191,19 @@
           <p id="masukMessage"></p>
         </div>
 
-               <!-- Barang Keluar -->
+        <!-- Barang Keluar -->
         <div id="page-keluar" class="content hidden">
           <h3>Barang Keluar</h3>
           <form id="formKeluar" onsubmit="submitKeluar(event)">
             <label>Tanggal</label><input type="date" id="keluarTanggal" required>
-            
-            <!-- GANTI BAGIAN INI -->
             <label>Cari & Pilih Barang *</label>
-            <input list="listBarangKeluar" id="keluarBarangInput" placeholder="Ketik nama atau kode barang..." autocomplete="off" required style="width:100%; padding:10px; margin-bottom:16px; border: 1px solid #ddd; border-radius: 8px;">
+            <input list="listBarangKeluar" id="keluarBarangInput" placeholder="Ketik nama atau kode barang..." autocomplete="off" required>
             <datalist id="listBarangKeluar"></datalist>
-            <input type="hidden" id="keluarBarang">
-            
             <label>Jumlah</label><input type="number" id="keluarQty" required min="1">
-            <label>Project Name</label><input type="text" id="keluarProject" placeholder="Contoh: NPM" required>
-            <label>Lokasi</label><input type="text" id="keluarLokasi" placeholder="Contoh: Matarape" required>
+            <label>Project Name *</label>
+            <select id="keluarProject" required></select>
+            <label>Lokasi *</label>
+            <select id="keluarLokasi" required></select>
             <label>Unit</label><select id="keluarUnit" required></select>
             <label>Keterangan</label><input type="text" id="keluarKeterangan">
             <button type="submit">SIMPAN</button>
@@ -162,9 +211,8 @@
           <p id="keluarMessage"></p>
         </div>
 
-                                <!-- Kartu Stok -->
+        <!-- Kartu Stok -->
         <div id="page-kartu" class="content hidden">
-          <!-- Filter Tanggal, Barang, & Lokasi Cetak -->
           <div style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; gap: 16px; align-items: end;">
             <div>
               <label style="font-weight: bold; display:block; margin-bottom:5px;">Pilih Barang:</label>
@@ -180,8 +228,6 @@
               <label style="font-weight: bold; display:block; margin-bottom:5px;">Sampai Tanggal:</label>
               <input type="date" id="filterKartuTglAkhir" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
             </div>
-            
-            <!-- TAMBAHAN INPUT LOKASI & TANGGAL CETAK -->
             <div>
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Lokasi Laporan:</label>
               <input type="text" id="inputLokasiCetak" placeholder="Contoh: NPM Matarape" value="NPM Matarape" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 180px;">
@@ -190,12 +236,9 @@
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Tanggal Laporan:</label>
               <input type="date" id="inputTanggalCetak" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
             </div>
-            
             <button onclick="loadKartu()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Tampilkan</button>
             <button onclick="cetakLaporan()" style="padding: 10px 16px; background: #4caf50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🖨️ Cetak Laporan</button>
           </div>
-          
-          <!-- TAMPILAN LAPORAN DI WEB -->
           <div id="kartuContent" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); overflow-x: auto;">
             <p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>
           </div>
@@ -207,19 +250,14 @@
             <h3 style="margin: 0;">Master Unit</h3>
             <button onclick="bukaFormUnit()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Tambah Unit</button>
           </div>
-          
           <div id="listUnit"></div>
-
-          <!-- Form Tambah/Edit Unit (Tersembunyi) -->
-          <div id="formTambahUnit" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-            <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+          <div id="formTambahUnit" class="hidden modal-overlay">
+            <div class="modal-box">
               <h3 id="judulFormUnit" style="margin-top: 0; color: #1a73e8;">Tambah Unit Baru</h3>
               <form onsubmit="submitTambahUnit(event)">
                 <input type="hidden" id="baruUnitID">
-                
                 <label>ID Unit (Kode Unik) *</label>
                 <input type="text" id="baruIdUnit" placeholder="Contoh: GGM EX 041" required>
-                
                 <label>Jenis Alat *</label>
                 <select id="baruJenisAlat" required>
                   <option value="PC 210">PC 210</option>
@@ -227,22 +265,16 @@
                   <option value="Bulldozer">Bulldozer</option>
                   <option value="Lainnya">Lainnya</option>
                 </select>
-
                 <label>Serial Number (SN) *</label>
                 <input type="text" id="baruSerialNumber" placeholder="Contoh: C01077" required>
-
                 <label>Project</label>
                 <input type="text" id="baruProject" value="NPM">
-
                 <label>Lokasi</label>
                 <input type="text" id="baruLokasi" value="Matarape">
-
                 <label>Model Unit</label>
                 <input type="text" id="baruModelUnit" placeholder="Contoh: PC 210">
-
                 <label>Hour Meter (HM) Terakhir</label>
                 <input type="number" id="baruHM" value="0" min="0">
-                
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
                   <button type="button" onclick="tutupFormUnit()" style="background: #ccc; color: #333; width: 50%;">Batal</button>
                   <button type="submit" style="width: 50%;">Simpan</button>
@@ -252,31 +284,25 @@
             </div>
           </div>
         </div>
-                <!-- Master Supplier -->
+
+        <!-- Master Supplier -->
         <div id="page-supplier" class="content hidden">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="margin: 0;">Master Supplier</h3>
             <button onclick="bukaFormSupplier()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Tambah Supplier</button>
           </div>
-          
           <div id="listSupplier"></div>
-
-          <!-- Form Tambah/Edit Supplier -->
-          <div id="formTambahSupplier" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-            <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+          <div id="formTambahSupplier" class="hidden modal-overlay">
+            <div class="modal-box">
               <h3 id="judulFormSupplier" style="margin-top: 0; color: #1a73e8;">Tambah Supplier Baru</h3>
               <form onsubmit="submitTambahSupplier(event)">
                 <input type="hidden" id="baruSupplierID">
-                
                 <label>Nama Supplier *</label>
                 <input type="text" id="baruNamaSupplier" required>
-                
                 <label>Alamat</label>
                 <input type="text" id="baruAlamat">
-                
                 <label>Kontak (Telp/Email)</label>
                 <input type="text" id="baruKontak">
-                
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
                   <button type="button" onclick="tutupFormSupplier()" style="background: #ccc; color: #333; width: 50%;">Batal</button>
                   <button type="submit" style="width: 50%;">Simpan</button>
@@ -287,10 +313,32 @@
           </div>
         </div>
 
-                <!-- Master Project -->
+        <!-- Master Project -->
         <div id="page-project" class="content hidden">
-          <h3>Master Project</h3>
-          <p>Fitur Master Project sedang disiapkan.</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0;">Master Project</h3>
+            <button onclick="bukaFormProject()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Tambah Project</button>
+          </div>
+          <div id="listProject"></div>
+          <div id="formTambahProject" class="hidden modal-overlay">
+            <div class="modal-box">
+              <h3 id="judulFormProject" style="margin-top: 0; color: #1a73e8;">Tambah Project Baru</h3>
+              <form onsubmit="submitTambahProject(event)">
+                <input type="hidden" id="baruProjectID">
+                <label>Nama Project *</label>
+                <input type="text" id="baruNamaProject" required>
+                <label>Lokasi *</label>
+                <input type="text" id="baruLokasiProject" placeholder="Contoh: Matarape" required>
+                <label>Keterangan</label>
+                <input type="text" id="baruKeteranganProject">
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                  <button type="button" onclick="tutupFormProject()" style="background: #ccc; color: #333; width: 50%;">Batal</button>
+                  <button type="submit" style="width: 50%;">Simpan</button>
+                </div>
+              </form>
+              <p id="msgTambahProject" style="text-align: center; margin-top: 12px;"></p>
+            </div>
+          </div>
         </div>
 
         <!-- Laporan Unit -->
