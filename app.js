@@ -431,7 +431,10 @@ async function loadKartu() {
       tanggalCetakStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
     }
 
-    const currentUserName = currentUser ? currentUser.nama : 'Admin';
+       // Ambil nama pembuat & penyetuju dari input (jika kosong, pakai nama default / nama login)
+    const inputMembuat = document.getElementById('inputNamaMembuat').value;
+    const currentUserName = inputMembuat ? inputMembuat : (currentUser ? currentUser.nama : 'Admin');
+    const inputMenyetujui = document.getElementById('inputNamaMenyetujui').value || 'Dodi Saputra Sahupala';
 
     container.innerHTML = `
       <div class="laporan-header">
@@ -470,9 +473,9 @@ async function loadKartu() {
       <div style="margin-top: 20px; font-size: 14px;">
         ${inputLokasi}, ${tanggalCetakStr}
       </div>
-      <div class="laporan-ttd">
+           <div class="laporan-ttd">
         <div class="ttd-box"><p>Yang Membuat,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${currentUserName}</p></div>
-        <div class="ttd-box"><p>Yang Menyetujui,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">Dodi Saputra Sahupala</p></div>
+        <div class="ttd-box"><p>Yang Menyetujui,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${inputMenyetujui}</p></div>
       </div>
     `;
   } catch (err) { container.innerHTML = `<p style="color: red; text-align: center;">Gagal: ${err.message}</p>`; }
@@ -1098,6 +1101,10 @@ function showPage(page) {
     }
     if(!document.getElementById('inputTanggalCetak').value) {
       document.getElementById('inputTanggalCetak').value = new Date().toISOString().split('T')[0];
+    }
+    // Auto-fill nama pembuat dengan nama user login jika masih kosong
+    if(document.getElementById('inputNamaMembuat') && !document.getElementById('inputNamaMembuat').value) {
+      document.getElementById('inputNamaMembuat').value = currentUser ? currentUser.nama : 'Admin';
     }
   }
 }
