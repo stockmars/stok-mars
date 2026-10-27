@@ -142,6 +142,25 @@ function fillDropdowns() {
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
 }
+// 7. Dropdown Project (filter Laporan Project)
+if (document.getElementById('filterProjectSelect')) {
+  let optFilterProject = '<option value="">Semua Project</option>';
+  masterProject.forEach(p => {
+    const lok = (p.Lokasi && p.Lokasi !== '-') ? ' (' + p.Lokasi + ')' : '';
+    optFilterProject += `<option value="${p.NamaProject}">${p.NamaProject}${lok}</option>`;
+  });
+  document.getElementById('filterProjectSelect').innerHTML = optFilterProject;
+}
+
+// 8. Dropdown Tahun (filter Laporan Project)
+if (document.getElementById('filterTahunanProject')) {
+  const currentYear = new Date().getFullYear();
+  let optTahun = '';
+  for (let y = currentYear - 5; y <= currentYear + 1; y++) {
+    optTahun += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+  }
+  document.getElementById('filterTahunanProject').innerHTML = optTahun;
+}
 
 // Auto-fill lokasi saat project dipilih (dipasang sekali)
 document.addEventListener('DOMContentLoaded', () => {
@@ -520,6 +539,218 @@ async function loadLaporanUnit() {
     }
   } catch (err) { container.innerHTML = '<p class="error">Error memuat laporan.</p>'; }
 }
+// ============================================
+// LAPORAN PROJECT
+// ============================================
+function toggleModeFilterProject() {
+  const mode = document.getElementById('filterModeProject').value;
+  document.getElementById('wrapHarian').classList.toggle('hidden', mode !== 'harian');
+  document.getElementById('wrapBulanan').classList.toggle('hidden', mode !== 'bulanan');
+  document.getElementById('wrapTahunan').classList.toggle('hidden', mode !== 'tahunan');
+  document.getElementById('wrapRangeAwal').classList.toggle('hidden', mode !== 'range');
+  document.getElementById('wrapRangeAkhir').classList.toggle('hidden', mode !== 'range');
+}
+
+function getPeriodeLaporanProject() {
+  const mode = document.getElementById('filterModeProject').value;
+  let tglAwal = '', tglAkhir = '', labelPeriode = '';
+
+  if (mode === 'harian') {
+    const tgl = document.getElementById('filterHarianProject').value;
+    if (!tgl) return null;
+    tglAwal = tgl;
+    tglAkhir = tgl;
+    labelPeriode = new Date(tgl).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  } else if (mode === 'bulanan') {
+    const bulan = document.getElementById('filterBulananProject').value; // YYYY-MM
+    if (!bulan) return null;
+    const [y, m] = bulan.split('-').map(Number);
+    const awal = new Date(y, m - 1, 1);
+    const akhir = new Date(y, m, 0);
+    tglAwal = awal.toISOString().split('T')[0];
+    tglAkhir = akhir.toISOString().split('T')[0];
+    labelPeriode = awal.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  } else if (mode === 'tahunan') {
+    const tahun = document.getElementById('filterTahunanProject').value;
+    if (!tahun) return null;
+    tglAwal = tahun + '-01-01';
+    tglAkhir = tahun + '-12-31';
+    labelPeriode = 'Tahun ' + tahun;
+  } else if (mode === 'range') {
+    const awal = document.getElementById('filterRangeAwalProject').value;
+    const akhir = document.getElementById('filterRangeAkhirProject').value;
+    if (!awal || !akhir) return null;
+    tglAwal = awal;
+    tglAkhir = akhir;
+    labelPeriode = new Date(awal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+      + ' s/d ' + new Date(akhir).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+  return { tglAwal, tglAkhir, labelPeriode };
+}
+
+async function loadLaporanProject() {
+  const container = document.getElementById('laporanProjectContent');
+  const periode = getPeriodeLaporanProject();
+  if (!periode) {
+    alert('Silakan isi filter periode terlebih dahulu!');
+    return;
+  }
+  const projectDipilih = document.getElementById('filterProjectSelect').value;
+  const projectLabel = projectDipilih || 'Semua Project';
+
+  container.innerHTML = '<p style="text-align: center;">Memuat data...</p>';
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'getLaporanProject',
+        data: { project: projectDipilih, tglAwal: periode.tglAwal, tglAkhir: periode.tglAkhir }
+      })
+    });
+    const result = await res.json();
+
+    if (!result.success) {
+      container.innerHTML = `<p style="color: red; text-align: center;">${result.message}</p>`;
+      return;
+    }
+
+    const units = result.data.units;
+    const grandTotalKeluar = result.data.grandTotalKeluar;
+    const grandTotalMasuk = result.data.grandTotalMasuk;
+    const totalUnit = result.data.totalUnit;
+    const totalTransaksiKeluar = result.data.totalTransaksiKeluar;
+    const totalTransaksiMasuk = result.data.totalTransaksiMasuk;
+    const currentUserName = currentUser ? currentUser.nama : 'Admin';
+
+    if (units.length === 0) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;">
+        <p style="font-size:16px;color:#666;margin-bottom:8px;">Tidak ada penggunaan part pada periode ini.</p>
+        <p style="font-size:13px;color:#999;">Project: <strong>${projectLabel}</strong> | Periode: <strong>${periode.labelPeriode}</strong></p>
+      </div>`;
+      return;
+    }
+
+    // Group by project
+    const groupedByProject = {};
+    units.forEach(u => {
+      if (!groupedByProject[u.project]) groupedByProject[u.project] = [];
+      groupedByProject[u.project].push(u);
+    });
+
+    // ==== RINGKASAN ATAS ====
+    let html = `
+      <div style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:10px;border-left:4px solid #1a73e8;">
+        <h4 style="margin:0 0 12px 0;color:#1a73e8;">Ringkasan Laporan</h4>
+        <table style="width:100%;font-size:13px;border:none;">
+          <tr>
+            <td style="width:150px;padding:4px 0;color:#666;">Project</td>
+            <td style="padding:4px 0;"><strong>${projectLabel}</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;color:#666;">Periode</td>
+            <td style="padding:4px 0;"><strong>${periode.labelPeriode}</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;color:#666;">Total Unit Terpakai</td>
+            <td style="padding:4px 0;"><strong>${totalUnit} unit</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;color:#666;">Total Transaksi Keluar</td>
+            <td style="padding:4px 0;"><strong>${totalTransaksiKeluar} transaksi</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;color:#666;">Total Part Terpakai (Keluar)</td>
+            <td style="padding:4px 0;"><strong style="color:#c62828;">${grandTotalKeluar} pcs</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;color:#666;">Total Barang Masuk (di periode ini)</td>
+            <td style="padding:4px 0;"><strong style="color:#2e7d32;">${grandTotalMasuk} pcs</strong></td>
+          </tr>
+        </table>
+      </div>
+    `;
+
+    // ==== DETAIL PER PROJECT ====
+    Object.keys(groupedByProject).forEach(projName => {
+      const unitsInProject = groupedByProject[projName];
+      const lokasi = unitsInProject[0].lokasi || '-';
+      const totalProj = unitsInProject.reduce((sum, u) => sum + u.totalPart, 0);
+
+      html += `
+        <div style="margin-bottom:24px;">
+          <h4 style="color:#1a73e8;margin:0 0 12px 0;padding:8px 12px;background:#e8f0fe;border-radius:8px;">
+            📁 Project: ${projName} <span style="font-size:13px;color:#666;font-weight:normal;">(Lokasi: ${lokasi})</span>
+            <span style="float:right;font-size:13px;font-weight:bold;color:#c62828;">${totalProj} pcs</span>
+          </h4>
+          <table class="laporan-table">
+            <thead>
+              <tr>
+                <th style="width:40px;">No</th>
+                <th>ID Unit</th>
+                <th>Jenis Alat</th>
+                <th>Serial Number</th>
+                <th style="width:100px;">Total Part</th>
+                <th>Rincian Part</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      unitsInProject.forEach((u, idx) => {
+        const detailStr = u.detail
+          .map(d => `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px;"><span>${d.nama}</span><strong>${d.qty}</strong></div>`)
+          .join('');
+        html += `
+          <tr>
+            <td style="text-align:center;">${idx + 1}</td>
+            <td><strong>${u.idUnit}</strong></td>
+            <td>${u.jenisAlat}</td>
+            <td>${u.serialNumber}</td>
+            <td style="text-align:center;font-weight:bold;background:#fff9e6;">${u.totalPart}</td>
+            <td style="text-align:left;">${detailStr || '-'}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+            <tfoot>
+              <tr style="background:#f0f0f0;font-weight:bold;">
+                <td colspan="4" style="text-align:right;">Total Project ${projName}</td>
+                <td style="text-align:center;color:#c62828;">${totalProj}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      `;
+    });
+
+    // ==== FOOTER TTD ====
+    const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    html += `
+      <div style="margin-top:30px;font-size:14px;">Matarape, ${today}</div>
+      <div class="laporan-ttd">
+        <div class="ttd-box"><p>Yang Membuat,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">${currentUserName}</p></div>
+        <div class="ttd-box"><p>Yang Menyetujui,</p><div class="ttd-space"></div><p style="font-weight: bold; text-decoration: underline;">Dodi Saputra Sahupala</p></div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = `<p style="color: red; text-align: center;">Gagal: ${err.message}</p>`;
+  }
+}
+
+function cetakLaporanProject() {
+  const content = document.getElementById('laporanProjectContent').innerHTML;
+  if (content.includes('Silakan pilih barang') || content.includes('Pilih filter lalu klik Tampilkan') || content.includes('Memuat data')) {
+    alert('Silakan tampilkan laporan terlebih dahulu sebelum mencetak!');
+    return;
+  }
+  window.print();
+}
 
 // ============================================
 // CRUD BARANG
@@ -870,7 +1101,20 @@ function showPage(page) {
     }
   }
 }
-
+if (page === 'laporanProject') {
+  const now = new Date();
+  // Default mode: bulanan, bulan ini
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const bulanIni = `${yyyy}-${mm}`;
+  if (document.getElementById('filterBulananProject') && !document.getElementById('filterBulananProject').value) {
+    document.getElementById('filterBulananProject').value = bulanIni;
+  }
+  if (document.getElementById('filterHarianProject') && !document.getElementById('filterHarianProject').value) {
+    document.getElementById('filterHarianProject').value = now.toISOString().split('T')[0];
+  }
+  toggleModeFilterProject();
+}
 function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
 window.addEventListener('DOMContentLoaded', async () => {
