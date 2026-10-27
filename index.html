@@ -233,10 +233,21 @@
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Lokasi Laporan:</label>
               <input type="text" id="inputLokasiCetak" placeholder="Contoh: NPM Matarape" value="NPM Matarape" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 180px;">
             </div>
-            <div>
+                        <div>
               <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Tanggal Laporan:</label>
               <input type="date" id="inputTanggalCetak" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
             </div>
+
+            <!-- TAMBAHAN INPUT NAMA TTD -->
+            <div>
+              <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Yang Membuat:</label>
+              <input type="text" id="inputNamaMembuat" placeholder="Nama Pembuat" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 150px;">
+            </div>
+            <div>
+              <label style="font-weight: bold; display:block; margin-bottom:5px; color: #d32f2f;">Yang Menyetujui:</label>
+              <input type="text" id="inputNamaMenyetujui" placeholder="Nama PenyETUJU" value="Dodi Saputra Sahupala" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; width: 180px;">
+            </div>
+            
             <button onclick="loadKartu()" style="padding: 10px 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Tampilkan</button>
             <button onclick="cetakLaporan()" style="padding: 10px 16px; background: #4caf50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🖨️ Cetak Laporan</button>
           </div>
