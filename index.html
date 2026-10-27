@@ -29,15 +29,23 @@
           <button onclick="doLogout()">Logout</button>
         </div>
       </header>
-      <nav>
-        <button onclick="showPage('dashboard')">Dashboard</button>
-        <button onclick="showPage('barang')">Master Barang</button>
-        <button onclick="showPage('masuk')">Barang Masuk</button>
-        <button onclick="showPage('keluar')">Barang Keluar</button>
-        <button onclick="showPage('kartu')">Kartu Stok</button>
-        <button onclick="showPage('unit')">Master Unit</button>
-        <button onclick="showPage('supplier')">Master Supplier</button>
-        <button onclick="showPage('laporanUnit')">Penggunaan per Unit</button>
+          <nav style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 16px; background: white; border-bottom: 1px solid #ddd;">
+        <button onclick="showPage('dashboard')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Dashboard</button>
+        
+        <div class="dropdown" style="position: relative; display: inline-block;">
+          <button style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Master ▾</button>
+          <div class="dropdown-content" style="display: none; position: absolute; background-color: #f9f9f9; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 100; border-radius: 8px;">
+            <button onclick="showPage('barang')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Barang</button>
+            <button onclick="showPage('unit')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Unit</button>
+            <button onclick="showPage('supplier')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Supplier</button>
+            <button onclick="showPage('project')" style="display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; font-size: 14px;">Master Project</button>
+          </div>
+        </div>
+
+        <button onclick="showPage('masuk')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Barang Masuk</button>
+        <button onclick="showPage('keluar')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Barang Keluar</button>
+        <button onclick="showPage('kartu')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Kartu Stok</button>
+        <button onclick="showPage('laporanUnit')" style="padding: 10px 16px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: bold;">Penggunaan per Unit</button>
       </nav>
       <main>
         <!-- Dashboard -->
@@ -277,6 +285,12 @@
               <p id="msgTambahSupplier" style="text-align: center; margin-top: 12px;"></p>
             </div>
           </div>
+        </div>
+
+                <!-- Master Project -->
+        <div id="page-project" class="content hidden">
+          <h3>Master Project</h3>
+          <p>Fitur Master Project sedang disiapkan.</p>
         </div>
 
         <!-- Laporan Unit -->
