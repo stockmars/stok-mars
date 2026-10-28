@@ -1211,9 +1211,6 @@ function showPage(page) {
   }
 
   if (page === 'laporanProject') {
-      if (page === 'riwayat') {
-    loadRiwayat();
-  }
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -1225,6 +1222,11 @@ function showPage(page) {
       document.getElementById('filterHarianProject').value = now.toISOString().split('T')[0];
     }
     toggleModeFilterProject();
+  }
+
+  // PERBAIKAN: Panggil loadRiwayat di luar kondisi laporanProject
+  if (page === 'riwayat') {
+    loadRiwayat();
   }
 }
 
