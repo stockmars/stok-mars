@@ -118,14 +118,18 @@ function fillDropdowns() {
   if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optDatalist;
   if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optDatalist;
 
-  // 2. Dropdown Kartu Stok
-  let optSelect = '<option value="">-- Pilih Barang --</option>';
+    // 2. Datalist & Hidden Input Kartu Stok
+  let optDatalistKartu = '';
+  let optSelectKartu = '';
   masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
     const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
-    optSelect += `<option value="${b.ItemID}">${b.ItemID} ${kode}- ${b.NamaBarang}${merek}</option>`; 
+    const label = `${b.ItemID} - ${b.NamaBarang} ${kode}${merek}`;
+    optDatalistKartu += `<option value="${label}"></option>`; 
+    optSelectKartu += `<option value="${b.ItemID}">${label}</option>`;
   });
-  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optSelect;
+  if(document.getElementById('listKartuBarang')) document.getElementById('listKartuBarang').innerHTML = optDatalistKartu;
+  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optSelectKartu;
 
   // 3. Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
@@ -360,6 +364,13 @@ function batalkanTransaksi(trxId, namaBarang) {
     prosesBatalTransaksi(trxId);
   }
 }
+function filterRiwayat() {
+  const q = document.getElementById('searchRiwayat').value.toLowerCase();
+  const rows = document.querySelectorAll('#listRiwayat tbody tr');
+  rows.forEach(row => { 
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; 
+  });
+}
 
 async function prosesBatalTransaksi(trxId) {
   try {
@@ -463,7 +474,7 @@ async function submitKeluar(e) {
 // KARTU STOK & CETAK
 // ============================================
 async function loadKartu() {
-  const itemId = document.getElementById('kartuBarangSelect').value;
+  const inputText = document.getElementById('kartuBarangInput').value;
   const container = document.getElementById('kartuContent');
   const tglAwal = document.getElementById('filterKartuTglAwal').value;
   const tglAkhir = document.getElementById('filterKartuTglAkhir').value;
@@ -471,12 +482,22 @@ async function loadKartu() {
   const inputLokasi = document.getElementById('inputLokasiCetak').value || 'NPM Matarape';
   const inputTanggal = document.getElementById('inputTanggalCetak').value;
 
+  // Cari barang berdasarkan teks input
+  const barang = masterBarang.find(b => inputText.includes(b.ItemID));
+  const itemId = barang ? barang.ItemID : '';
+
+  // Sinkronkan hidden input
+  if (document.getElementById('kartuBarangSelect')) {
+    document.getElementById('kartuBarangSelect').value = itemId;
+  }
+
   if (!itemId) { 
     container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; 
     return; 
   }
   
   container.innerHTML = '<p style="text-align: center;">Memuat data laporan...</p>';
+  // ... sisa kode ke bawah tetap sama
 
   try {
     const barang = masterBarang.find(b => b.ItemID === itemId);
@@ -1229,6 +1250,15 @@ function showPage(page) {
     loadRiwayat();
   }
 }
+  if (page === 'kartu') {
+    // ... kode sebelumnya ...
+    if(document.getElementById('kartuBarangInput')) document.getElementById('kartuBarangInput').value = '';
+  }
+
+  if (page === 'riwayat') {
+    if(document.getElementById('searchRiwayat')) document.getElementById('searchRiwayat').value = '';
+    loadRiwayat();
+  }
 
 function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
