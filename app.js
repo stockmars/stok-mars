@@ -66,7 +66,6 @@ function applyRolePermissions() {
   const role = String(currentUser.role).toLowerCase().trim();
   const menuMaster = document.getElementById('menuMaster');
   
-  // SEMUA role sekarang bisa melihat menu Master
   if (menuMaster) {
     menuMaster.style.display = 'inline-block'; 
   }
@@ -118,18 +117,14 @@ function fillDropdowns() {
   if(document.getElementById('listBarangMasuk')) document.getElementById('listBarangMasuk').innerHTML = optDatalist;
   if(document.getElementById('listBarangKeluar')) document.getElementById('listBarangKeluar').innerHTML = optDatalist;
 
-    // 2. Datalist & Hidden Input Kartu Stok
+  // 2. Datalist Kartu Stok
   let optDatalistKartu = '';
-  let optSelectKartu = '';
   masterBarang.forEach(b => { 
     const kode = (b.KodeItem && b.KodeItem !== '-') ? `[${b.KodeItem}] ` : '';
     const merek = (b.Merek && b.Merek !== '-') ? ` (${b.Merek})` : '';
-    const label = `${b.ItemID} - ${b.NamaBarang} ${kode}${merek}`;
-    optDatalistKartu += `<option value="${label}"></option>`; 
-    optSelectKartu += `<option value="${b.ItemID}">${label}</option>`;
+    optDatalistKartu += `<option value="${b.ItemID} - ${b.NamaBarang} ${kode}${merek}"></option>`; 
   });
   if(document.getElementById('listKartuBarang')) document.getElementById('listKartuBarang').innerHTML = optDatalistKartu;
-  if(document.getElementById('kartuBarangSelect')) document.getElementById('kartuBarangSelect').innerHTML = optSelectKartu;
 
   // 3. Dropdown Unit
   let optUnit = '<option value="">-- Pilih Unit --</option>';
@@ -142,7 +137,7 @@ function fillDropdowns() {
   masterSupplier.forEach(s => { optSupplier += `<option value="${s.NamaSupplier}">${s.NamaSupplier}</option>`; });
   if(document.getElementById('masukSupplier')) document.getElementById('masukSupplier').innerHTML = optSupplier;
 
-  // 5. Dropdown Project & Lokasi (dari MASTER_PROJECT)
+  // 5. Dropdown Project & Lokasi
   let optProject = '<option value="">-- Pilih Project --</option>';
   masterProject.forEach(p => { optProject += `<option value="${p.NamaProject}" data-lokasi="${p.Lokasi || ''}">${p.NamaProject}</option>`; });
   if(document.getElementById('keluarProject')) {
@@ -168,7 +163,7 @@ function fillDropdowns() {
   if(document.getElementById('masukTanggal')) document.getElementById('masukTanggal').value = today;
   if(document.getElementById('keluarTanggal')) document.getElementById('keluarTanggal').value = today;
 
-  // 7. Dropdown Project (filter Laporan Project)
+  // 7. Dropdown Filter Project
   if (document.getElementById('filterProjectSelect')) {
     let optFilterProject = '<option value="">Semua Project</option>';
     masterProject.forEach(p => {
@@ -178,7 +173,7 @@ function fillDropdowns() {
     document.getElementById('filterProjectSelect').innerHTML = optFilterProject;
   }
 
-  // 8. Dropdown Tahun (filter Laporan Project)
+  // 8. Dropdown Tahun
   if (document.getElementById('filterTahunanProject')) {
     const currentYear = new Date().getFullYear();
     let optTahun = '';
@@ -192,8 +187,6 @@ function fillDropdowns() {
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
-  
-  // Cek apakah yang login Admin Site (tidak boleh hapus)
   const isAdminSite = currentUser && String(currentUser.role).toLowerCase().trim() === 'admin site';
 
   masterBarang.forEach(b => { 
@@ -308,6 +301,7 @@ async function loadDashboard() {
     }
   } catch(e) {}
 }
+
 async function loadRiwayat() {
   const container = document.getElementById('listRiwayat');
   if(!container) return;
@@ -359,17 +353,18 @@ async function loadRiwayat() {
   }
 }
 
-function batalkanTransaksi(trxId, namaBarang) {
-  if (confirm(`Yakin ingin membatalkan transaksi untuk "${namaBarang}"?\n\nStok akan otomatis dikembalikan/disesuaikan.`)) {
-    prosesBatalTransaksi(trxId);
-  }
-}
 function filterRiwayat() {
   const q = document.getElementById('searchRiwayat').value.toLowerCase();
   const rows = document.querySelectorAll('#listRiwayat tbody tr');
   rows.forEach(row => { 
     row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; 
   });
+}
+
+function batalkanTransaksi(trxId, namaBarang) {
+  if (confirm(`Yakin ingin membatalkan transaksi untuk "${namaBarang}"?\n\nStok akan otomatis dikembalikan/disesuaikan.`)) {
+    prosesBatalTransaksi(trxId);
+  }
 }
 
 async function prosesBatalTransaksi(trxId) {
@@ -382,8 +377,8 @@ async function prosesBatalTransaksi(trxId) {
     
     if (result.success) {
       alert('✓ ' + result.message);
-      await loadRiwayat(); // Refresh tabel riwayat
-      await loadInitialData(); // Refresh dashboard & stok
+      await loadRiwayat(); 
+      await loadInitialData(); 
     } else {
       alert('Gagal: ' + result.message);
     }
@@ -391,6 +386,7 @@ async function prosesBatalTransaksi(trxId) {
     alert('Error: ' + err.message);
   }
 }
+
 // ============================================
 // SIMPAN TRANSAKSI
 // ============================================
@@ -486,21 +482,14 @@ async function loadKartu() {
   const barang = masterBarang.find(b => inputText.includes(b.ItemID));
   const itemId = barang ? barang.ItemID : '';
 
-  // Sinkronkan hidden input
-  if (document.getElementById('kartuBarangSelect')) {
-    document.getElementById('kartuBarangSelect').value = itemId;
-  }
-
   if (!itemId) { 
     container.innerHTML = '<p style="text-align: center; color: #666;">Silakan pilih barang terlebih dahulu.</p>'; 
     return; 
   }
   
   container.innerHTML = '<p style="text-align: center;">Memuat data laporan...</p>';
-  // ... sisa kode ke bawah tetap sama
 
   try {
-    const barang = masterBarang.find(b => b.ItemID === itemId);
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getTransaksi', data: { itemId } }) });
     const result = await res.json();
     let transaksi = result.data;
@@ -1229,6 +1218,7 @@ function showPage(page) {
     if(document.getElementById('inputNamaMembuat') && !document.getElementById('inputNamaMembuat').value) {
       document.getElementById('inputNamaMembuat').value = currentUser ? currentUser.nama : 'Admin';
     }
+    if(document.getElementById('kartuBarangInput')) document.getElementById('kartuBarangInput').value = '';
   }
 
   if (page === 'laporanProject') {
@@ -1245,20 +1235,11 @@ function showPage(page) {
     toggleModeFilterProject();
   }
 
-  // PERBAIKAN: Panggil loadRiwayat di luar kondisi laporanProject
-  if (page === 'riwayat') {
-    loadRiwayat();
-  }
-}
-  if (page === 'kartu') {
-    // ... kode sebelumnya ...
-    if(document.getElementById('kartuBarangInput')) document.getElementById('kartuBarangInput').value = '';
-  }
-
   if (page === 'riwayat') {
     if(document.getElementById('searchRiwayat')) document.getElementById('searchRiwayat').value = '';
     loadRiwayat();
   }
+}
 
 function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
