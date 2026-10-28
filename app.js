@@ -141,7 +141,7 @@ function fillDropdowns() {
   masterSupplier.forEach(s => { optSupplier += `<option value="${s.NamaSupplier}">${s.NamaSupplier}</option>`; });
   if(document.getElementById('masukSupplier')) document.getElementById('masukSupplier').innerHTML = optSupplier;
 
-  // 5. Dropdown Project & Lokasi
+  // 5. Dropdown Project & Lokasi (Keluar)
   let optProject = '<option value="">-- Pilih Project --</option>';
   masterProject.forEach(p => { optProject += `<option value="${p.NamaProject}" data-lokasi="${p.Lokasi || ''}">${p.NamaProject}</option>`; });
   if(document.getElementById('keluarProject')) {
@@ -429,8 +429,8 @@ async function submitMasuk(e) {
     itemId: barang.ItemID,
     qty: Number(document.getElementById('masukQty').value),
     supplier: document.getElementById('masukSupplier').value,
-    project: document.getElementById('masukProject').value, // TAMBAHAN
-    lokasi: document.getElementById('masukLokasi').value,   // TAMBAHAN
+    project: document.getElementById('masukProject').value, 
+    lokasi: document.getElementById('masukLokasi').value,   
     keterangan: document.getElementById('masukKeterangan').value,
     namaPIC: currentUser ? currentUser.nama : 'Admin',
     email: currentUser ? currentUser.email : 'admin@npm.com'
@@ -510,7 +510,6 @@ async function loadKartu() {
   const inputLokasi = document.getElementById('inputLokasiCetak').value || 'NPM Matarape';
   const inputTanggal = document.getElementById('inputTanggalCetak').value;
 
-  // Cari barang berdasarkan teks input
   const barang = masterBarang.find(b => inputText.includes(b.ItemID));
   const itemId = barang ? barang.ItemID : '';
 
