@@ -24,8 +24,12 @@ document.addEventListener('click', function(e) {
 });
 
 // ============================================
-// LOGIN & LOGOUT
+// TOKEN & AUTH
 // ============================================
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
 async function doLogin() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
@@ -42,7 +46,9 @@ async function doLogin() {
     const result = await res.json();
     if (result.success) {
       currentUser = result.user;
+      localStorage.setItem('token', result.token); 
       localStorage.setItem('user', JSON.stringify(currentUser)); 
+      
       document.getElementById('loginPage').classList.add('hidden');
       document.getElementById('mainApp').classList.remove('hidden');
       document.getElementById('userName').textContent = currentUser.nama + ' (' + currentUser.role + ')';
@@ -53,22 +59,18 @@ async function doLogin() {
 }
 
 function doLogout() { 
+  localStorage.removeItem('token'); 
   localStorage.removeItem('user'); 
   location.reload(); 
 }
 
 // ============================================
-// HAK AKSES BERDASARKAN ROLE
+// HAK AKSES
 // ============================================
 function applyRolePermissions() {
   if (!currentUser) return;
-
-  const role = String(currentUser.role).toLowerCase().trim();
   const menuMaster = document.getElementById('menuMaster');
-  
-  if (menuMaster) {
-    menuMaster.style.display = 'inline-block'; 
-  }
+  if (menuMaster) menuMaster.style.display = 'inline-block'; 
 }
 
 // ============================================
@@ -76,16 +78,18 @@ function applyRolePermissions() {
 // ============================================
 async function loadInitialData() {
   try {
-    const [resBarang, resUnit, resSupplier, resProject] = await Promise.all([
-      fetch(API_URL + '?action=getMasterBarang'),
-      fetch(API_URL + '?action=getMasterUnit'),
-      fetch(API_URL + '?action=getMasterSupplier'),
-      fetch(API_URL + '?action=getMasterProject')
+    const token = getToken();
+    const fetchData = (action) => fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: action, token: token })
+    }).then(res => res.json());
+
+    const [jsonBarang, jsonUnit, jsonSupplier, jsonProject] = await Promise.all([
+      fetchData('getMasterBarang'),
+      fetchData('getMasterUnit'),
+      fetchData('getMasterSupplier'),
+      fetchData('getMasterProject')
     ]);
-    const jsonBarang = await resBarang.json();
-    const jsonUnit = await resUnit.json();
-    const jsonSupplier = await resSupplier.json();
-    const jsonProject = await resProject.json();
     
     if (jsonBarang.success) masterBarang = jsonBarang.data;
     if (jsonUnit.success) masterUnit = jsonUnit.data;
@@ -182,8 +186,16 @@ function fillDropdowns() {
     }
     document.getElementById('filterTahunanProject').innerHTML = optTahun;
   }
+
+  // 9. Dropdown Project untuk Barang Masuk
+  let optMasukProject = '<option value="">-- Pilih Project --</option>';
+  masterProject.forEach(p => { optMasukProject += `<option value="${p.NamaProject}" data-lokasi="${p.Lokasi || ''}">${p.NamaProject}</option>`; });
+  if(document.getElementById('masukProject')) document.getElementById('masukProject').innerHTML = optMasukProject;
 }
 
+// ============================================
+// RENDER LISTS (MASTER DATA)
+// ============================================
 function loadListBarang() {
   if(!document.getElementById('listBarang')) return;
   let html = '';
@@ -287,9 +299,15 @@ function filterBarang() {
   rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
 }
 
+// ============================================
+// DASHBOARD
+// ============================================
 async function loadDashboard() {
   try {
-    const res = await fetch(API_URL + '?action=getDashboard');
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'getDashboard', token: getToken() }) 
+    });
     const result = await res.json();
     if (result.success) {
       document.getElementById('dashTotalBarang').textContent = result.data.totalBarang;
@@ -302,13 +320,19 @@ async function loadDashboard() {
   } catch(e) {}
 }
 
+// ============================================
+// RIWAYAT TRANSAKSI
+// ============================================
 async function loadRiwayat() {
   const container = document.getElementById('listRiwayat');
   if(!container) return;
   container.innerHTML = '<p>Memuat data...</p>';
   
   try {
-    const res = await fetch(API_URL + '?action=getRiwayatTransaksi');
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'getRiwayatTransaksi', token: getToken() }) 
+    });
     const result = await res.json();
     
     if (result.success) {
@@ -371,7 +395,7 @@ async function prosesBatalTransaksi(trxId) {
   try {
     const res = await fetch(API_URL, { 
       method: 'POST', 
-      body: JSON.stringify({ action: 'hapusTransaksi', data: { trxId } }) 
+      body: JSON.stringify({ action: 'hapusTransaksi', token: getToken(), data: { trxId } }) 
     });
     const result = await res.json();
     
@@ -405,13 +429,18 @@ async function submitMasuk(e) {
     itemId: barang.ItemID,
     qty: Number(document.getElementById('masukQty').value),
     supplier: document.getElementById('masukSupplier').value,
+    project: document.getElementById('masukProject').value, // TAMBAHAN
+    lokasi: document.getElementById('masukLokasi').value,   // TAMBAHAN
     keterangan: document.getElementById('masukKeterangan').value,
     namaPIC: currentUser ? currentUser.nama : 'Admin',
     email: currentUser ? currentUser.email : 'admin@npm.com'
   };
   
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'barangMasuk', data }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'barangMasuk', token: getToken(), data }) 
+    });
     const result = await res.json();
     if (result.success) { 
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
@@ -451,7 +480,10 @@ async function submitKeluar(e) {
   };
   
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'barangKeluar', data }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'barangKeluar', token: getToken(), data }) 
+    });
     const result = await res.json();
     if (result.success) { 
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
@@ -490,7 +522,10 @@ async function loadKartu() {
   container.innerHTML = '<p style="text-align: center;">Memuat data laporan...</p>';
 
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getTransaksi', data: { itemId } }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'getTransaksi', token: getToken(), data: { itemId } }) 
+    });
     const result = await res.json();
     let transaksi = result.data;
     
@@ -617,39 +652,16 @@ async function loadLaporanUnit() {
   const unitDipilih = document.getElementById('filterUnit').value;
   
   try {
-    const res = await fetch(API_URL + '?action=getTransaksi');
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'getLaporanUnit', token: getToken(), data: { tglAwal, tglAkhir, unitDipilih } }) 
+    });
     const result = await res.json();
     if (result.success) {
-      const filteredData = result.data.filter(t => {
-        if (t.JenisTransaksi !== 'KELUAR' || t.StatusTransaksi !== 'AKTIF' || !t.IDUnit || t.IDUnit === '-') return false;
-        if (unitDipilih && t.IDUnit !== unitDipilih) return false;
-        const tanggalTrx = new Date(t.TanggalTransaksi).setHours(0,0,0,0);
-        if (tglAwal) { const awal = new Date(tglAwal).setHours(0,0,0,0); if (tanggalTrx < awal) return false; }
-        if (tglAkhir) { const akhir = new Date(tglAkhir).setHours(23,59,59,999); if (tanggalTrx > akhir) return false; }
-        return true;
-      });
-
-      if (filteredData.length === 0) { container.innerHTML = '<p>Tidak ada penggunaan part pada periode/unit ini.</p>'; return; }
-
-      const perUnit = {};
-      filteredData.forEach(t => {
-        if (!perUnit[t.IDUnit]) {
-          const unitInfo = masterUnit.find(u => u.IDUnit === t.IDUnit);
-          perUnit[t.IDUnit] = { idUnit: t.IDUnit, jenisAlat: unitInfo ? unitInfo.JenisAlat : '-', totalPart: 0, detail: {} };
-        }
-        const qty = Number(t.QtyKeluar) || 0;
-        perUnit[t.IDUnit].totalPart += qty;
-        if (!perUnit[t.IDUnit].detail[t.ItemID]) {
-          const brgInfo = masterBarang.find(b => b.ItemID === t.ItemID);
-          perUnit[t.IDUnit].detail[t.ItemID] = { nama: brgInfo ? brgInfo.NamaBarang : t.ItemID, qty: 0 };
-        }
-        perUnit[t.IDUnit].detail[t.ItemID].qty += qty;
-      });
-
-      const resultData = Object.values(perUnit).map(u => ({ idUnit: u.idUnit, jenisAlat: u.jenisAlat, totalPart: u.totalPart, detail: Object.values(u.detail) })).sort((a, b) => b.totalPart - a.totalPart);
+      if (result.data.length === 0) { container.innerHTML = '<p>Tidak ada penggunaan part pada periode/unit ini.</p>'; return; }
       
       let html = '<div class="cards">';
-      resultData.forEach(unit => {
+      result.data.forEach(unit => {
         let detailHtml = unit.detail.map(d => `<div style="display:flex; justify-content:space-between; font-size:13px; border-bottom:1px dashed #eee; padding:6px 0;"><span>${d.nama}</span><strong>${d.qty}</strong></div>`).join('');
         html += `<div class="card" style="text-align:left;"><h4 style="color:#1a73e8; font-size:16px; margin-bottom:4px;">${unit.idUnit} <span style="font-size:12px; color:#666;">(${unit.jenisAlat})</span></h4><p style="font-size:24px; margin-bottom:12px;">${unit.totalPart} <span style="font-size:12px; color:#666; font-weight:normal;">Total Part</span></p><div style="margin-top:12px;"><small style="color:#999; display:block; margin-bottom:4px;">Rincian:</small>${detailHtml}</div></div>`;
       });
@@ -682,7 +694,7 @@ function getPeriodeLaporanProject() {
     tglAkhir = tgl;
     labelPeriode = new Date(tgl).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   } else if (mode === 'bulanan') {
-    const bulan = document.getElementById('filterBulananProject').value; // YYYY-MM
+    const bulan = document.getElementById('filterBulananProject').value;
     if (!bulan) return null;
     const [y, m] = bulan.split('-').map(Number);
     const awal = new Date(y, m - 1, 1);
@@ -725,6 +737,7 @@ async function loadLaporanProject() {
       method: 'POST',
       body: JSON.stringify({
         action: 'getLaporanProject',
+        token: getToken(),
         data: { project: projectDipilih, tglAwal: periode.tglAwal, tglAkhir: periode.tglAkhir }
       })
     });
@@ -907,7 +920,10 @@ function konfirmasiHapus(itemId) {
 
 async function hapusBarangData(itemId) {
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusBarang', data: { itemId } }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'hapusBarang', token: getToken(), data: { itemId } }) 
+    });
     const result = await res.json();
     if(result.success) {
       alert(result.message);
@@ -940,7 +956,10 @@ async function submitTambahBarang(e) {
   };
   
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: actionType, token: getToken(), data }) 
+    });
     const result = await res.json();
     if (result.success) { 
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
@@ -993,7 +1012,10 @@ function konfirmasiHapusUnit(unitId) {
 
 async function hapusUnitData(unitId) {
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusUnit', data: { unitId } }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'hapusUnit', token: getToken(), data: { unitId } }) 
+    });
     const result = await res.json();
     if(result.success) {
       alert(result.message);
@@ -1027,7 +1049,10 @@ async function submitTambahUnit(e) {
   };
   
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: actionType, token: getToken(), data }) 
+    });
     const result = await res.json();
     if (result.success) { 
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
@@ -1073,7 +1098,10 @@ function konfirmasiHapusSupplier(supplierId) {
 
 async function hapusSupplierData(supplierId) {
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusSupplier', data: { supplierId } }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'hapusSupplier', token: getToken(), data: { supplierId } }) 
+    });
     const result = await res.json();
     if(result.success) {
       alert(result.message);
@@ -1103,7 +1131,10 @@ async function submitTambahSupplier(e) {
   };
   
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: actionType, token: getToken(), data }) 
+    });
     const result = await res.json();
     if (result.success) { 
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
@@ -1149,7 +1180,10 @@ function konfirmasiHapusProject(projectId) {
 
 async function hapusProjectData(projectId) {
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'hapusProject', data: { projectId } }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'hapusProject', token: getToken(), data: { projectId } }) 
+    });
     const result = await res.json();
     if(result.success) {
       alert(result.message);
@@ -1179,7 +1213,10 @@ async function submitTambahProject(e) {
   };
   
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionType, data }) });
+    const res = await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: actionType, token: getToken(), data }) 
+    });
     const result = await res.json();
     if (result.success) { 
       msg.textContent = '✓ ' + result.message; msg.className = 'success'; 
@@ -1251,6 +1288,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const lokasi = opt ? opt.getAttribute('data-lokasi') : '';
       const lokSel = document.getElementById('keluarLokasi');
       if (lokSel && lokasi && lokasi !== '-') lokSel.value = lokasi;
+    });
+  }
+  const masukProjSelect = document.getElementById('masukProject');
+  if (masukProjSelect) {
+    masukProjSelect.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const lokasi = opt ? opt.getAttribute('data-lokasi') : '';
+      const lokInput = document.getElementById('masukLokasi');
+      if (lokInput && lokasi && lokasi !== '-') lokInput.value = lokasi;
     });
   }
 });
